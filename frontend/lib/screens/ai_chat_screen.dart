@@ -21,15 +21,17 @@ class AIChatScreen extends StatefulWidget {
   State<AIChatScreen> createState() => _AIChatScreenState();
 }
 
-class _AIChatScreenState extends State<AIChatScreen> {
+class _AIChatScreenState extends State<AIChatScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  final FocusNode _keyboardFocus = FocusNode();
-  bool _enterHandled = false;
-
   PlatformFile? uploadedImage;
   bool _isTyping = false;
+
+  bool _isSidebarCollapsed = false;
 
   int _activeIndex = 1; 
   int? _hoverIndex;
@@ -37,10 +39,10 @@ class _AIChatScreenState extends State<AIChatScreen> {
   final TextEditingController _chatSearchController = TextEditingController();
   String _chatSearch = "";
 
-  final List<_Conversation> _conversations = [
+  static final List<_Conversation> _conversations = [
     _Conversation(id: "c1", title: "New chat"),
   ];
-  String _activeConversationId = "c1";
+  static String _activeConversationId = "c1";
 
   _Conversation get _activeConversation =>
       _conversations.firstWhere((c) => c.id == _activeConversationId);
@@ -51,6 +53,14 @@ class _AIChatScreenState extends State<AIChatScreen> {
     return _conversations.where((c) => c.title.toLowerCase().contains(q)).toList();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom();
+    });
+  }
+
   void _newChat() {
     final id = DateTime.now().millisecondsSinceEpoch.toString();
     setState(() {
@@ -59,6 +69,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
       _isTyping = false;
       uploadedImage = null;
       _controller.clear();
+      _isSidebarCollapsed = false; // Open sidebar to show the new chat
     });
     _scrollToBottom();
   }
@@ -158,22 +169,26 @@ class _AIChatScreenState extends State<AIChatScreen> {
     );
 
     if (newTitle == null) return;
-
-    setState(() {
-      conv.title = newTitle;
-    });
+    setState(() => conv.title = newTitle);
   }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent + 220,
+          _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 260),
           curve: Curves.easeOut,
         );
       }
     });
+  }
+
+  void _handleSuggestion(String text) {
+    setState(() {
+      _controller.text = text;
+    });
+    _sendMessage();
   }
 
   Future<void> _sendMessage() async {
@@ -219,20 +234,13 @@ class _AIChatScreenState extends State<AIChatScreen> {
     }
   }
 
-  Future<void> _pollJobStatus(
-    String jobId,
-    _ChatMessage message, {
-    AiJob? initialJob,
-  }) async {
+  Future<void> _pollJobStatus(String jobId, _ChatMessage message, {AiJob? initialJob}) async {
     var currentJob = initialJob;
     var attempts = 0;
     const maxAttempts = 150;
     const delay = Duration(seconds: 2);
 
-    while (mounted &&
-        attempts < maxAttempts &&
-        currentJob != null &&
-        !_isJobComplete(currentJob)) {
+    while (mounted && attempts < maxAttempts && currentJob != null && !_isJobComplete(currentJob)) {
       await Future.delayed(delay);
       if (!mounted) return;
 
@@ -246,10 +254,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
       if (!mounted || currentJob == null) return;
 
       setState(() {
-        message.text = _formatJobStatus(
-          currentJob!,
-          hasDownload: message.modelUrl?.isNotEmpty == true,
-        );
+        message.text = _formatJobStatus(currentJob!, hasDownload: message.modelUrl?.isNotEmpty == true);
       });
       _scrollToBottom();
       attempts++;
@@ -259,10 +264,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
 
     if (currentJob != null && _isJobComplete(currentJob)) {
       setState(() {
-        message.text = _formatJobStatus(
-          currentJob!,
-          hasDownload: message.modelUrl?.isNotEmpty == true,
-        );
+        message.text = _formatJobStatus(currentJob!, hasDownload: message.modelUrl?.isNotEmpty == true);
         _isTyping = false;
       });
       _scrollToBottom();
@@ -275,11 +277,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
     setState(() {
       final fallback = currentJob ?? initialJob;
       message.text = [
-        if (fallback != null)
-          _formatJobStatus(
-            fallback,
-            hasDownload: message.modelUrl?.isNotEmpty == true,
-          ),
+        if (fallback != null) _formatJobStatus(fallback, hasDownload: message.modelUrl?.isNotEmpty == true),
         "Still processing. You can check back later in your dashboard.",
       ].join("\n");
       _isTyping = false;
@@ -291,11 +289,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
     return job.status == "succeeded" || job.status == "failed";
   }
 
-  String _formatJobStatus(
-    AiJob job, {
-    bool hasDownload = false,
-    String? downloadError,
-  }) {
+  String _formatJobStatus(AiJob job, {bool hasDownload = false, String? downloadError}) {
     final buffer = StringBuffer()
       ..writeln("Job ${job.id}")
       ..writeln("Status: ${job.status} (${job.progress}%)");
@@ -318,20 +312,12 @@ class _AIChatScreenState extends State<AIChatScreen> {
   }
 
   Future<void> _attachModelDownload(String jobId, _ChatMessage message, AiJob job) async {
-    if (message.modelUrl?.isNotEmpty == true) {
-      return;
-    }
+    if (message.modelUrl?.isNotEmpty == true) return;
     try {
       final url = await r2vAiJobs.downloadGlb(jobId);
       if (!mounted) return;
       if (url.isEmpty) {
-        setState(() {
-          message.text = _formatJobStatus(
-            job,
-            hasDownload: false,
-            downloadError: "Missing download URL",
-          );
-        });
+        setState(() => message.text = _formatJobStatus(job, hasDownload: false, downloadError: "Missing download URL"));
         return;
       }
       setState(() {
@@ -341,22 +327,10 @@ class _AIChatScreenState extends State<AIChatScreen> {
       _scrollToBottom();
     } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() {
-        message.text = _formatJobStatus(
-          job,
-          hasDownload: false,
-          downloadError: e.message,
-        );
-      });
+      setState(() => message.text = _formatJobStatus(job, hasDownload: false, downloadError: e.message));
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        message.text = _formatJobStatus(
-          job,
-          hasDownload: false,
-          downloadError: "Unable to fetch download link",
-        );
-      });
+      setState(() => message.text = _formatJobStatus(job, hasDownload: false, downloadError: "Unable to fetch download link"));
     }
   }
 
@@ -381,7 +355,6 @@ class _AIChatScreenState extends State<AIChatScreen> {
     final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
     if (result != null) {
       setState(() => uploadedImage = result.files.first);
-      _sendMessage();
     }
   }
 
@@ -389,23 +362,34 @@ class _AIChatScreenState extends State<AIChatScreen> {
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
-    _keyboardFocus.dispose();
     _chatSearchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final isWide = MediaQuery.of(context).size.width >= 900;
+    
+    // Dynamically check theme
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Stack(
-      children: [
-        Positioned.fill(child: MeshyParticleBackground(isDark: isDark)),
-        Positioned.fill(
-          child: isWide ? _buildWide(context, isDark) : _buildMobile(context, isDark),
-        ),
-      ],
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0C0414) : const Color(0xFFF8FAFC),
+      body: Stack(
+        children: [
+          // 1. The Interactive Particle Background (Base Layer)
+          Positioned.fill(child: MeshyParticleBackground(isDark: isDark)),
+          
+          // 2. The Glowing Blobs from the React design (Blurred overlay)
+          Positioned.fill(child: _ReactHeroBackground(isDark: isDark)),
+          
+          // 3. The UI
+          SafeArea(
+            child: isWide ? _buildWide(context, isDark) : _buildMobile(context, isDark),
+          ),
+        ],
+      ),
     );
   }
 
@@ -413,43 +397,48 @@ class _AIChatScreenState extends State<AIChatScreen> {
     final w = MediaQuery.of(context).size.width;
     final double rightMaxWidth = w > 1500 ? 1500 : w;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-              child: _GlassTopBar(
-                activeIndex: _activeIndex,
-                hoverIndex: _hoverIndex,
-                isDark: isDark,
-                onHover: (v) => setState(() => _hoverIndex = v),
-                onLeave: () => setState(() => _hoverIndex = null),
-                onNavTap: (idx) {
-                  setState(() => _activeIndex = idx);
-                  switch (idx) {
-                    case 0: Navigator.pushNamed(context, '/home'); break;
-                    case 1: break; 
-                    case 2: Navigator.pushNamed(context, '/explore'); break;
-                    case 3: Navigator.pushNamed(context, '/settings'); break;
-                  }
-                },
-                onProfile: () => Navigator.pushNamed(context, '/profile'),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(
-                      width: 310,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+          child: _GlassTopBar(
+            activeIndex: _activeIndex,
+            hoverIndex: _hoverIndex,
+            isDark: isDark,
+            onHover: (v) => setState(() => _hoverIndex = v),
+            onLeave: () => setState(() => _hoverIndex = null),
+            onNavTap: (idx) {
+              setState(() => _activeIndex = idx);
+              switch (idx) {
+                case 0: Navigator.pushNamed(context, '/home'); break;
+                case 1: break; 
+                case 2: Navigator.pushNamed(context, '/explore'); break;
+                case 3: Navigator.pushNamed(context, '/settings'); break;
+              }
+            },
+            onProfile: () => Navigator.pushNamed(context, '/profile'),
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  width: _isSidebarCollapsed ? 0 : 310,
+                  child: ClipRect(
+                    child: OverflowBox(
+                      alignment: Alignment.topLeft,
+                      minWidth: 310,
+                      maxWidth: 310,
                       child: _LeftChatSidebar(
                         conversations: _filteredConversations,
                         activeId: _activeConversationId,
                         isDark: isDark,
+                        onToggleSidebar: () => setState(() => _isSidebarCollapsed = true),
                         onNewChat: _newChat,
                         onSelect: _selectChat,
                         searchController: _chatSearchController,
@@ -465,45 +454,430 @@ class _AIChatScreenState extends State<AIChatScreen> {
                         },
                       ),
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: rightMaxWidth),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(26),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: isDark ? Colors.black.withOpacity(0.16) : Colors.white.withOpacity(0.85),
-                                  borderRadius: BorderRadius.circular(26),
-                                  border: Border.all(color: isDark ? Colors.white.withOpacity(0.10) : Colors.white),
-                                  boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
+                  ),
+                ),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  width: _isSidebarCollapsed ? 0 : 14,
+                ),
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: rightMaxWidth),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(26),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.black.withOpacity(0.2) : Colors.white.withOpacity(0.6),
+                              borderRadius: BorderRadius.circular(26),
+                              border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.8)),
+                            ),
+                            child: Stack(
+                              children: [
+                                Positioned.fill(
+                                  child: _activeConversation.messages.isEmpty 
+                                      ? _HeroEmptyState(onSuggestionTap: _handleSuggestion, isDark: isDark)
+                                      : _ChatPanel(
+                                          messages: _activeConversation.messages,
+                                          controller: _scrollController,
+                                          isTyping: _isTyping,
+                                          isDark: isDark,
+                                          padding: const EdgeInsets.fromLTRB(22, 18, 22, 140),
+                                        ),
                                 ),
-                                child: Stack(
-                                  children: [
-                                    Positioned.fill(
-                                      child: _ChatPanel(
-                                        messages: _activeConversation.messages,
-                                        controller: _scrollController,
-                                        isTyping: _isTyping,
-                                        isDark: isDark,
-                                        padding: const EdgeInsets.fromLTRB(22, 18, 22, 96),
+                                // Floating Expand Button (Visible only when sidebar is collapsed)
+                                if (_isSidebarCollapsed)
+                                  Positioned(
+                                    top: 16,
+                                    left: 16,
+                                    child: Tooltip(
+                                      message: "Open sidebar",
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: BackdropFilter(
+                                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                          child: InkWell(
+                                            onTap: () => setState(() => _isSidebarCollapsed = false),
+                                            child: Container(
+                                              height: 42,
+                                              width: 42,
+                                              decoration: BoxDecoration(
+                                                color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.6),
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white),
+                                              ),
+                                              child: Icon(Icons.menu_rounded, color: isDark ? Colors.white : Colors.black87, size: 20),
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                    Positioned(
-                                      left: 14, right: 14, bottom: 14,
-                                      child: _inputBar(isDark),
-                                    ),
-                                  ],
+                                  ),
+                                Positioned(
+                                  left: 14, right: 14, bottom: 14,
+                                  child: _inputBar(isDark),
                                 ),
-                              ),
+                              ],
                             ),
                           ),
                         ),
                       ),
                     ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobile(BuildContext context, bool isDark) {
+    return Column(
+      children: [
+        AppBar(
+          title: Text(
+            _activeConversation.title == "New chat" ? "R2V Studio" : _activeConversation.title,
+            style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w700),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: IconThemeData(color: isDark ? Colors.white : const Color(0xFF1E293B)),
+          actions: [
+            IconButton(
+              tooltip: "New chat",
+              onPressed: _newChat,
+              icon: Icon(Icons.add_rounded, color: isDark ? Colors.white : const Color(0xFF1E293B)),
+            ),
+          ],
+        ),
+        Expanded(
+          child: _activeConversation.messages.isEmpty 
+              ? _HeroEmptyState(onSuggestionTap: _handleSuggestion, isDark: isDark)
+              : _ChatPanel(
+                  messages: _activeConversation.messages,
+                  controller: _scrollController,
+                  isTyping: _isTyping,
+                  isDark: isDark,
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+                ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+          child: _inputBar(isDark),
+        ),
+      ],
+    );
+  }
+
+  Widget _inputBar(bool isDark) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (uploadedImage != null)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12, left: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white),
+                    boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: uploadedImage!.bytes != null
+                            ? Image.memory(uploadedImage!.bytes!, width: 44, height: 44, fit: BoxFit.cover)
+                            : const Icon(Icons.image_rounded, size: 44, color: Colors.grey),
+                      ),
+                      const SizedBox(width: 12),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 150),
+                        child: Text(
+                          uploadedImage!.name,
+                          style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 13, fontWeight: FontWeight.w500),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => setState(() => uploadedImage = null),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.close_rounded, size: 16, color: isDark ? Colors.white70 : Colors.black54),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        Focus(
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+              if (HardwareKeyboard.instance.isShiftPressed) {
+                return KeyEventResult.ignored;
+              } else {
+                _sendMessage();
+                return KeyEventResult.handled;
+              }
+            }
+            return KeyEventResult.ignored;
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: isDark ? Colors.white.withOpacity(0.15) : Colors.white.withOpacity(0.9)),
+                  boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: _pickImage,
+                      icon: Icon(Icons.attach_file_rounded, color: isDark ? Colors.white54 : Colors.black45),
+                      hoverColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                    ),
+                    IconButton(
+                      onPressed: () {}, 
+                      icon: const Icon(Icons.auto_awesome_rounded, color: Color(0xFFBC70FF)),
+                      hoverColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                    ),
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        maxLines: null,
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                        decoration: InputDecoration(
+                          hintText: "How can R2V Studio help you today?",
+                          hintStyle: TextStyle(color: isDark ? Colors.white60 : Colors.black38),
+                          border: InputBorder.none,
+                          isCollapsed: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: _sendMessage,
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        margin: const EdgeInsets.only(right: 4),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.arrow_upward_rounded, color: isDark ? Colors.white : Colors.black87, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ==========================================
+// THE NEW RESPONSIVE HERO EMPTY STATE
+// ==========================================
+class _HeroEmptyState extends StatelessWidget {
+  final ValueChanged<String> onSuggestionTap;
+  final bool isDark;
+
+  const _HeroEmptyState({required this.onSuggestionTap, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Badge (Glassmorphic)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.6),
+                      border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white),
+                      boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.black.withOpacity(0.5) : Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Text("🥳", style: TextStyle(fontSize: 12)),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Introducing Magic Components",
+                          style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Headline
+              Text(
+                "Build Stunning 3D Models\neffortlessly",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  fontSize: 46,
+                  fontWeight: FontWeight.w900,
+                  height: 1.1,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Subtitle
+              Text(
+                "R2V Studio can create amazing 3D assets with a few lines of prompt.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDark ? Colors.white.withOpacity(0.8) : Colors.black54,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 48),
+
+              // Suggestion Pills
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  _SuggestionPill("Generate a Sci-Fi Drone", isDark: isDark, onTap: () => onSuggestionTap("Generate a Sci-Fi Drone")),
+                  _SuggestionPill("Create a Cyberpunk Car", isDark: isDark, onTap: () => onSuggestionTap("Create a Cyberpunk Car")),
+                  _SuggestionPill("Model a Medieval Knight", isDark: isDark, onTap: () => onSuggestionTap("Model a Medieval Knight")),
+                  _SuggestionPill("Generate Wooden Chair", isDark: isDark, onTap: () => onSuggestionTap("Generate Wooden Chair")),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SuggestionPill extends StatelessWidget {
+  final String label;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _SuggestionPill(this.label, {required this.isDark, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white),
+              boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
+            ),
+            child: Text(
+              label,
+              style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReactHeroBackground extends StatelessWidget {
+  final bool isDark;
+  
+  const _ReactHeroBackground({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: 90, sigmaY: 90),
+        child: Stack(
+          children: [
+            // Blobs simulating the skew gradients
+            Positioned(
+              top: -150,
+              right: -50,
+              child: Transform.rotate(
+                angle: -0.35,
+                child: Row(
+                  children: [
+                    _GradientBlob(isDark: isDark),
+                    const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark),
+                    const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: -50,
+              right: -150,
+              child: Transform.rotate(
+                angle: -0.35, 
+                child: Row(
+                  children: [
+                    _GradientBlob(isDark: isDark),
+                    const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark),
                   ],
                 ),
               ),
@@ -513,125 +887,34 @@ class _AIChatScreenState extends State<AIChatScreen> {
       ),
     );
   }
+}
 
-  Widget _buildMobile(BuildContext context, bool isDark) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: Text(
-          _activeConversation.title == "New chat" ? "AI Studio" : _activeConversation.title,
-          style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w700),
-        ),
-        backgroundColor: isDark ? Colors.black.withOpacity(0.15) : Colors.white.withOpacity(0.7),
-        elevation: 0,
-        iconTheme: IconThemeData(color: isDark ? Colors.white : const Color(0xFF1E293B)),
-        actions: [
-          IconButton(
-            tooltip: "New chat",
-            onPressed: _newChat,
-            icon: Icon(Icons.add_rounded, color: isDark ? Colors.white : const Color(0xFF1E293B)),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _ChatPanel(
-              messages: _activeConversation.messages,
-              controller: _scrollController,
-              isTyping: _isTyping,
-              isDark: isDark,
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-            child: _inputBar(isDark),
-          ),
-        ],
-      ),
-    );
-  }
+class _GradientBlob extends StatelessWidget {
+  final bool isDark;
+  const _GradientBlob({required this.isDark});
 
-  Widget _inputBar(bool isDark) {
-    return RawKeyboardListener(
-      focusNode: _keyboardFocus,
-      onKey: (event) {
-        if (event is RawKeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
-          if (_enterHandled) return;
-          _enterHandled = true;
-
-          if (event.isShiftPressed) {
-            final text = _controller.text;
-            final newText = "$text\n";
-            _controller.text = newText;
-            _controller.selection = TextSelection.fromPosition(TextPosition(offset: newText.length));
-          } else {
-            _sendMessage();
-          }
-        }
-
-        if (event is RawKeyUpEvent && event.logicalKey == LogicalKeyboardKey.enter) {
-          _enterHandled = false;
-        }
-      },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.black.withOpacity(0.22) : Colors.white.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: isDark ? Colors.white.withOpacity(0.10) : Colors.white),
-              boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
-            ),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: const Icon(Icons.image_rounded, color: Color(0xFFBC70FF)),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    maxLines: null,
-                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    decoration: InputDecoration(
-                      hintText: "Type a prompt or upload an image...",
-                      hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black38),
-                      border: InputBorder.none,
-                      isCollapsed: true,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                GestureDetector(
-                  onTap: _sendMessage,
-                  child: Container(
-                    width: 46,
-                    height: 46,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF8A4FFF), Color(0xFFBC70FF)],
-                      ),
-                    ),
-                    child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
-                  ),
-                ),
-              ],
-            ),
+  @override
+  Widget build(BuildContext context) {
+    return Transform(
+      transform: Matrix4.skewY(-0.7),
+      child: Container(
+        width: 140,
+        height: 400,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark 
+                ? [Colors.white.withOpacity(0.15), Colors.blue.shade300.withOpacity(0.35)]
+                : [const Color(0xFFBC70FF).withOpacity(0.25), const Color(0xFF4895EF).withOpacity(0.25)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
           ),
         ),
       ),
     );
   }
 }
+// ==========================================
+
 
 class _Conversation {
   final String id;
@@ -651,6 +934,9 @@ class _ChatMessage {
   _ChatMessage(this.text, this.image, this.isUser, {this.modelUrl});
 }
 
+// ---------------------------------------------------------
+// TOP BAR
+// ---------------------------------------------------------
 class _GlassTopBar extends StatelessWidget {
   final int activeIndex;
   final int? hoverIndex;
@@ -679,9 +965,9 @@ class _GlassTopBar extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           decoration: BoxDecoration(
-            color: isDark ? Colors.black.withOpacity(0.35) : Colors.white.withOpacity(0.75),
+            color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.75),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.white.withOpacity(0.9)),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.9)),
             boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))],
           ),
           child: Row(
@@ -690,7 +976,7 @@ class _GlassTopBar extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 "R2V Studio",
-                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.w700),
+                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.w800),
               ),
               const Spacer(),
               SizedBox(
@@ -711,7 +997,7 @@ class _GlassTopBar extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.05),
+                    color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(Icons.person, color: isDark ? Colors.white : const Color(0xFF1E293B), size: 20),
@@ -778,7 +1064,9 @@ class _TopTabs extends StatelessWidget {
                           child: AnimatedDefaultTextStyle(
                             duration: const Duration(milliseconds: 120),
                             style: TextStyle(
-                              color: effective ? (isDark ? Colors.white : const Color(0xFF1E293B)) : (isDark ? Colors.white.withOpacity(0.7) : Colors.black54),
+                              color: effective 
+                                  ? (isDark ? Colors.white : const Color(0xFF1E293B)) 
+                                  : (isDark ? Colors.white60 : Colors.black54),
                               fontWeight: effective ? FontWeight.w600 : FontWeight.w400,
                               fontSize: 13.5,
                             ),
@@ -812,6 +1100,10 @@ class _TopTabs extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------
+// LEFT SIDEBAR
+// ---------------------------------------------------------
+
 enum _ChatMenuAction { rename, delete }
 enum _UserMenuAction { profile, settings, newChat }
 
@@ -828,6 +1120,7 @@ class _LeftChatSidebar extends StatelessWidget {
   final void Function(String id) onDelete;
   final void Function(_UserMenuAction action) onUserMenu;
   final bool isDark;
+  final VoidCallback onToggleSidebar;
 
   const _LeftChatSidebar({
     required this.conversations,
@@ -840,6 +1133,7 @@ class _LeftChatSidebar extends StatelessWidget {
     required this.onDelete,
     required this.onUserMenu,
     required this.isDark,
+    required this.onToggleSidebar,
   });
 
   @override
@@ -850,30 +1144,54 @@ class _LeftChatSidebar extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF0B0D14).withOpacity(0.55) : Colors.white.withOpacity(0.85),
+            color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.7),
             borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: isDark ? Colors.white.withOpacity(0.10) : Colors.white),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.8)),
             boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))],
           ),
           child: Column(
             children: [
               const SizedBox(height: 14),
+              // Header Row with New Chat and Close Sidebar button
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 46,
-                  child: ElevatedButton.icon(
-                    onPressed: onNewChat,
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text("New chat"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8A4FFF),
-                      foregroundColor: Colors.white,
-                      elevation: isDark ? 0 : 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 46,
+                        child: ElevatedButton.icon(
+                          onPressed: onNewChat,
+                          icon: const Icon(Icons.add_rounded, size: 18),
+                          label: const Text("New chat"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8A4FFF),
+                            foregroundColor: Colors.white,
+                            elevation: isDark ? 0 : 4,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    Tooltip(
+                      message: "Close sidebar",
+                      child: InkWell(
+                        onTap: onToggleSidebar,
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          height: 46,
+                          width: 46,
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.04),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.transparent),
+                          ),
+                          child: Icon(Icons.menu_open_rounded, color: isDark ? Colors.white70 : Colors.black54, size: 22),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),
@@ -883,13 +1201,13 @@ class _LeftChatSidebar extends StatelessWidget {
                   height: 44,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.03),
+                    color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.03),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.transparent),
+                    border: Border.all(color: Colors.transparent),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.search_rounded, color: isDark ? Colors.white.withOpacity(0.6) : Colors.black38, size: 18),
+                      Icon(Icons.search_rounded, color: isDark ? Colors.white.withOpacity(0.5) : Colors.black38, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: TextField(
@@ -898,7 +1216,7 @@ class _LeftChatSidebar extends StatelessWidget {
                           style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 13),
                           decoration: InputDecoration(
                             hintText: "Search chats",
-                            hintStyle: TextStyle(color: isDark ? Colors.white.withOpacity(0.55) : Colors.black38, fontSize: 13),
+                            hintStyle: TextStyle(color: isDark ? Colors.white.withOpacity(0.5) : Colors.black38, fontSize: 13),
                             border: InputBorder.none,
                             isCollapsed: true,
                           ),
@@ -951,9 +1269,8 @@ class _LeftChatSidebar extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.10) : Colors.black.withOpacity(0.05),
+                        color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05),
                         shape: BoxShape.circle,
-                        border: Border.all(color: isDark ? Colors.white.withOpacity(0.10) : Colors.transparent),
                       ),
                       child: Icon(Icons.person, color: isDark ? Colors.white70 : Colors.black54, size: 18),
                     ),
@@ -964,7 +1281,7 @@ class _LeftChatSidebar extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: isDark ? Colors.white.withOpacity(0.85) : const Color(0xFF1E293B),
+                          color: isDark ? Colors.white : const Color(0xFF1E293B),
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,
                         ),
@@ -972,7 +1289,7 @@ class _LeftChatSidebar extends StatelessWidget {
                     ),
                     PopupMenuButton<_UserMenuAction>(
                       tooltip: "More",
-                      color: isDark ? const Color(0xFF0B0D14) : Colors.white,
+                      color: isDark ? const Color(0xFF1C1528) : Colors.white,
                       icon: Icon(Icons.more_horiz_rounded, color: isDark ? Colors.white.withOpacity(0.75) : Colors.black54),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       onSelected: onUserMenu,
@@ -1014,7 +1331,7 @@ class _MenuRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: isDark ? Colors.white.withOpacity(0.85) : Colors.black87, size: 18),
+        Icon(icon, color: isDark ? Colors.white : Colors.black87, size: 18),
         const SizedBox(width: 10),
         Text(label, style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
       ],
@@ -1046,15 +1363,22 @@ class _ChatHistoryTile extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
-          color: active ? (isDark ? Colors.white.withOpacity(0.10) : Colors.black.withOpacity(0.04)) : Colors.transparent,
+          color: active 
+              ? (isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.04)) 
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: active ? (isDark ? Colors.white.withOpacity(0.14) : Colors.transparent) : Colors.transparent),
+          border: Border.all(
+              color: active 
+                  ? (isDark ? Colors.white.withOpacity(0.1) : Colors.transparent) 
+                  : Colors.transparent),
         ),
         child: Row(
           children: [
             Icon(
               Icons.chat_bubble_outline_rounded,
-              color: isDark ? Colors.white.withOpacity(active ? 0.85 : 0.55) : (active ? const Color(0xFF1E293B) : Colors.black54),
+              color: isDark 
+                  ? Colors.white.withOpacity(active ? 0.9 : 0.5) 
+                  : (active ? const Color(0xFF1E293B) : Colors.black54),
               size: 18,
             ),
             const SizedBox(width: 10),
@@ -1064,7 +1388,9 @@ class _ChatHistoryTile extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: isDark ? Colors.white.withOpacity(active ? 0.92 : 0.70) : (active ? const Color(0xFF1E293B) : Colors.black87),
+                  color: isDark 
+                      ? Colors.white.withOpacity(active ? 1.0 : 0.7) 
+                      : (active ? const Color(0xFF1E293B) : Colors.black87),
                   fontSize: 13.5,
                   fontWeight: active ? FontWeight.w700 : FontWeight.w500,
                 ),
@@ -1073,8 +1399,8 @@ class _ChatHistoryTile extends StatelessWidget {
             const SizedBox(width: 6),
             PopupMenuButton<_ChatMenuAction>(
               tooltip: "Chat options",
-              color: isDark ? const Color(0xFF0B0D14) : Colors.white,
-              icon: Icon(Icons.more_vert_rounded, color: isDark ? Colors.white.withOpacity(0.70) : Colors.black54, size: 18),
+              color: isDark ? const Color(0xFF1C1528) : Colors.white,
+              icon: Icon(Icons.more_vert_rounded, color: isDark ? Colors.white.withOpacity(0.7) : Colors.black54, size: 18),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               onSelected: onMenu,
               itemBuilder: (_) => [
@@ -1094,6 +1420,10 @@ class _ChatHistoryTile extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------
+// CHAT PANEL
+// ---------------------------------------------------------
 
 class _ChatPanel extends StatelessWidget {
   final List<_ChatMessage> messages;
@@ -1147,20 +1477,15 @@ class _ChatBubble extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 560),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
-        gradient: isUser
-            ? const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF8A4FFF), Color(0xFFBC70FF)],
-              )
-            : null,
-        color: isUser ? null : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.04)),
-        border: Border.all(color: isUser ? Colors.white.withOpacity(0.14) : (isDark ? Colors.white.withOpacity(0.10) : Colors.transparent)),
-        boxShadow: [
-          if (isUser)
-             BoxShadow(blurRadius: 18, color: const Color(0xFF8A4FFF).withOpacity(isDark ? 0.35 : 0.2), offset: const Offset(0, 10))
-          else if (isDark)
-             BoxShadow(blurRadius: 18, color: Colors.black.withOpacity(0.25), offset: const Offset(0, 10))
+        color: isUser 
+            ? (isDark ? Colors.white.withOpacity(0.9) : const Color(0xFF1E293B)) 
+            : (isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.8)),
+        border: Border.all(
+            color: isDark 
+                ? Colors.white.withOpacity(0.15) 
+                : Colors.black.withOpacity(isUser ? 0.0 : 0.05)),
+        boxShadow: isDark ? [] : [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))
         ],
       ),
       child: Column(
@@ -1182,7 +1507,9 @@ class _ChatBubble extends StatelessWidget {
           Text(
             message.text,
             style: TextStyle(
-              color: isUser ? Colors.white : (isDark ? Colors.white.withOpacity(0.96) : const Color(0xFF1E293B)),
+              color: isUser 
+                  ? (isDark ? Colors.black : Colors.white) 
+                  : (isDark ? Colors.white : Colors.black87),
               fontSize: 14.5,
               height: 1.35,
               fontWeight: isUser ? FontWeight.w600 : FontWeight.w500,
@@ -1195,7 +1522,7 @@ class _ChatBubble extends StatelessWidget {
               child: AspectRatio(
                 aspectRatio: 16 / 10,
                 child: Container(
-                  color: isDark ? Colors.black.withOpacity(0.18) : Colors.black.withOpacity(0.05),
+                  color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.05),
                   child: ModelViewer(
                     key: ValueKey(message.modelUrl),
                     src: message.modelUrl!,
@@ -1214,12 +1541,11 @@ class _ChatBubble extends StatelessWidget {
                 if (url == null || url.isEmpty) return;
                 await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
               },
-              icon: const Icon(Icons.download_rounded, size: 18),
-              label: const Text("Download GLB"),
+              icon: Icon(Icons.download_rounded, size: 18, color: isDark ? Colors.white : Colors.black87),
+              label: Text("Download GLB", style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
               style: TextButton.styleFrom(
-                foregroundColor: isDark ? Colors.white : const Color(0xFF1E293B),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                backgroundColor: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+                backgroundColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
@@ -1259,9 +1585,10 @@ class _TypingBubbleState extends State<_TypingBubble> with SingleTickerProviderS
           margin: const EdgeInsets.symmetric(vertical: 8),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: widget.isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.04),
+            color: widget.isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.8),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: widget.isDark ? Colors.white.withOpacity(0.10) : Colors.transparent),
+            border: Border.all(
+                color: widget.isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1272,7 +1599,12 @@ class _TypingBubbleState extends State<_TypingBubble> with SingleTickerProviderS
               const SizedBox(width: 6),
               _dot(opacity: 0.25 + 0.55 * a),
               const SizedBox(width: 10),
-              Text("Typing...", style: TextStyle(color: widget.isDark ? Colors.white.withOpacity(0.75) : Colors.black54, fontSize: 13)),
+              Text(
+                "Typing...", 
+                style: TextStyle(
+                    color: widget.isDark ? Colors.white70 : Colors.black54, 
+                    fontSize: 13),
+              ),
             ],
           ),
         );
@@ -1284,11 +1616,16 @@ class _TypingBubbleState extends State<_TypingBubble> with SingleTickerProviderS
     return Container(
       width: 6,
       height: 6,
-      decoration: BoxDecoration(color: widget.isDark ? Colors.white.withOpacity(opacity) : Colors.black.withOpacity(opacity), shape: BoxShape.circle),
+      decoration: BoxDecoration(
+          color: widget.isDark ? Colors.white.withOpacity(opacity) : Colors.black.withOpacity(opacity), 
+          shape: BoxShape.circle),
     );
   }
 }
 
+// ---------------------------------------------------------
+// MESHY BACKGROUND (The Interactive Base layer)
+// ---------------------------------------------------------
 class MeshyParticleBackground extends StatelessWidget {
   final bool isDark;
   const MeshyParticleBackground({super.key, required this.isDark});

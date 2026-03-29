@@ -253,16 +253,8 @@ class _HomeScreenState extends State<HomeScreen> {
           };
         }
       });
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
     } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to load dashboard')),
-      );
+      // Graceful degradation, continue showing defaults if fetch fails
     } finally {
       if (mounted) setState(() => _loadingSummary = false);
     }
@@ -318,19 +310,31 @@ class _HomeScreenState extends State<HomeScreen> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     _lastIsWeb = isWeb;
 
-    return Stack(
-      children: [
-        Positioned.fill(child: MeshyParticleBackground(isDark: isDark)),
-        Positioned.fill(child: isWeb ? _buildWebHome(context, isDark) : _buildMobileHome(context, isDark)),
-        if (_activeMarketModel != null)
-          Positioned.fill(
-            child: _HomeMarketModelPanel(
-              model: _activeMarketModel!,
-              onClose: () => setState(() => _activeMarketModel = null),
-              isDark: isDark,
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0C0414) : const Color(0xFFF8FAFC),
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      body: Stack(
+        children: [
+          // 1. Interactive Particle Background
+          Positioned.fill(child: MeshyParticleBackground(isDark: isDark)),
+          
+          // 2. React-style Glowing Blurred Background
+          Positioned.fill(child: _ReactHeroBackground(isDark: isDark)),
+
+          // 3. UI
+          Positioned.fill(child: isWeb ? _buildWebHome(context, isDark) : _buildMobileHome(context, isDark)),
+          
+          if (_activeMarketModel != null)
+            Positioned.fill(
+              child: _HomeMarketModelPanel(
+                model: _activeMarketModel!,
+                onClose: () => setState(() => _activeMarketModel = null),
+                isDark: isDark,
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -341,9 +345,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final double w = MediaQuery.of(context).size.width;
     final double contentWidth = w > 1180 ? 1180 : w;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Center(
+    return SafeArea(
+      child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: contentWidth),
           child: Column(
@@ -463,9 +466,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           decoration: BoxDecoration(
-            color: isDark ? Colors.black.withOpacity(0.35) : Colors.white.withOpacity(0.75),
+            color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.75),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.white.withOpacity(0.9)),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.9)),
             boxShadow: isDark ? [] : [
               BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))
             ],
@@ -487,7 +490,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.05), 
+                    color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05), 
                     shape: BoxShape.circle
                   ),
                   child: Icon(Icons.person, color: isDark ? Colors.white : const Color(0xFF1E293B), size: 20),
@@ -530,7 +533,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () {
                         setState(() => _webActiveNavIndex = index);
                         switch (index) {
-                          case 0: Navigator.pushNamed(context, '/home'); break;
+                          case 0: break; // Already Home
                           case 1: Navigator.pushNamed(context, '/aichat'); break;
                           case 2: Navigator.pushNamed(context, '/explore'); break;
                           case 3: Navigator.pushNamed(context, '/settings'); break;
@@ -570,102 +573,108 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Expanded(
           flex: 4,
-          child: Container(
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.black.withOpacity(0.18) : Colors.white.withOpacity(0.85),
-              borderRadius: BorderRadius.circular(26),
-              border: Border.all(color: isDark ? Colors.white.withOpacity(0.10) : Colors.white),
-              boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Welcome back, @$_displayName",
-                  style: TextStyle(color: isDark ? Colors.white.withOpacity(0.7) : Colors.black54, fontSize: 15),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(26),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(26),
+                  border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.8)),
+                  boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  "Turn your ideas\ninto 3D in seconds.",
-                  style: TextStyle(
-                    color: isDark ? Colors.white : const Color(0xFF1E293B),
-                    fontSize: 38,
-                    height: 1.1,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  "Use AI prompts, scan objects, or browse ready-made 3D assets.",
-                  style: TextStyle(color: isDark ? Colors.white.withOpacity(0.8) : Colors.black87, fontSize: 15, height: 1.4),
-                ),
-                const SizedBox(height: 22),
-                Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ElevatedButton.icon(
-                      onPressed: () => Navigator.pushNamed(context, '/aichat'),
-                      icon: const Icon(Icons.bolt_rounded),
-                      label: const Text("AI Studio"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8A4FFF),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        elevation: isDark ? 0 : 4,
+                    Text(
+                      "Welcome back, @$_displayName",
+                      style: TextStyle(color: isDark ? Colors.white.withOpacity(0.7) : Colors.black54, fontSize: 15),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "Turn your ideas\ninto 3D in seconds.",
+                      style: TextStyle(
+                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        fontSize: 38,
+                        height: 1.1,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(width: 14),
-                    ElevatedButton.icon(
-                      onPressed: () => Navigator.pushNamed(context, '/photo_scan'),
-                      icon: const Icon(Icons.photo_camera_rounded),
-                      label: const Text("Scan"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF72585),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        elevation: isDark ? 0 : 4,
-                      ),
+                    const SizedBox(height: 16),
+                    Text(
+                      "Use AI prompts, scan objects, or browse ready-made 3D assets.",
+                      style: TextStyle(color: isDark ? Colors.white.withOpacity(0.8) : Colors.black87, fontSize: 15, height: 1.4),
                     ),
-                    const SizedBox(width: 14),
-                    OutlinedButton.icon(
-                      onPressed: () => Navigator.pushNamed(context, '/explore'),
-                      icon: const Icon(Icons.storefront_rounded),
-                      label: const Text("Marketplace"),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: isDark ? Colors.white : const Color(0xFF1E293B),
-                        side: BorderSide(color: isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.1)),
-                        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      ),
+                    const SizedBox(height: 22),
+                    Row(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () => Navigator.pushNamed(context, '/aichat'),
+                          icon: const Icon(Icons.bolt_rounded),
+                          label: const Text("AI Studio"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8A4FFF),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                            elevation: isDark ? 0 : 4,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        ElevatedButton.icon(
+                          onPressed: () => Navigator.pushNamed(context, '/photo_scan'),
+                          icon: const Icon(Icons.photo_camera_rounded),
+                          label: const Text("Scan"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFF72585),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                            elevation: isDark ? 0 : 4,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        OutlinedButton.icon(
+                          onPressed: () => Navigator.pushNamed(context, '/explore'),
+                          icon: const Icon(Icons.storefront_rounded),
+                          label: const Text("Marketplace"),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: isDark ? Colors.white : const Color(0xFF1E293B),
+                            side: BorderSide(color: isDark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.1)),
+                            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
         const SizedBox(width: 32),
         Expanded(
           flex: 3,
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(26),
-              gradient: LinearGradient(
-                colors: isDark 
-                    ? [const Color(0xFF282A36).withOpacity(0.85), const Color(0xFF161620).withOpacity(0.95)]
-                    : [Colors.white.withOpacity(0.9), Colors.white.withOpacity(0.6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(26),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(26),
+                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.5),
+                  border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white),
+                  boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
+                ),
+                child: Text(
+                  "“A neon-lit sci-fi car parked in a rainy alley, cinematic lighting.”\n\nPrompt → 3D preview in under 60s.",
+                  style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 13),
+                ),
               ),
-              border: Border.all(color: isDark ? Colors.white.withOpacity(0.16) : Colors.white),
-              boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
-            ),
-            child: Text(
-              "“A neon-lit sci-fi car parked in a rainy alley, cinematic lighting.”\n\nPrompt → 3D preview in under 60s.",
-              style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 13),
             ),
           ),
         ),
@@ -734,9 +743,9 @@ class _HomeScreenState extends State<HomeScreen> {
       curve: Curves.easeOut,
       padding: EdgeInsets.symmetric(horizontal: 14, vertical: _collapsed ? 9 : 10),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0B0D14).withOpacity(0.85) : Colors.white.withOpacity(0.85),
+        color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.85),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: isDark ? Colors.white.withOpacity(0.10) : Colors.black.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.10) : Colors.white),
         boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
@@ -841,104 +850,110 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.black.withOpacity(0.18) : Colors.white.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: isDark ? Colors.white.withOpacity(0.10) : Colors.white),
-            boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Welcome back, @$_displayName",
-                style: TextStyle(color: isDark ? Colors.white.withOpacity(0.7) : Colors.black54, fontSize: 14),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(26),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white),
+                boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
               ),
-              const SizedBox(height: 8),
-              Text(
-                "Turn your ideas\ninto 3D in seconds.",
-                style: TextStyle(
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
-                  fontSize: 26,
-                  height: 1.08,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                "Use AI prompts, scan objects, or browse ready-made 3D assets.",
-                style: TextStyle(color: isDark ? Colors.white.withOpacity(0.82) : Colors.black87, fontSize: 13.5, height: 1.4),
-              ),
-              const SizedBox(height: 14),
-              Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => Navigator.pushNamed(context, '/aichat'),
-                      icon: const Icon(Icons.bolt_rounded, size: 18),
-                      label: const Text("AI Studio"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8A4FFF),
-                        foregroundColor: Colors.white,
+                  Text(
+                    "Welcome back, @$_displayName",
+                    style: TextStyle(color: isDark ? Colors.white.withOpacity(0.7) : Colors.black54, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Turn your ideas\ninto 3D in seconds.",
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      fontSize: 26,
+                      height: 1.08,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Use AI prompts, scan objects, or browse ready-made 3D assets.",
+                    style: TextStyle(color: isDark ? Colors.white.withOpacity(0.82) : Colors.black87, fontSize: 13.5, height: 1.4),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => Navigator.pushNamed(context, '/aichat'),
+                          icon: const Icon(Icons.bolt_rounded, size: 18),
+                          label: const Text("AI Studio"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8A4FFF),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => Navigator.pushNamed(context, '/photo_scan'),
+                          icon: const Icon(Icons.photo_camera_rounded, size: 18),
+                          label: const Text("Scan"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFF72585),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.pushNamed(context, '/explore'),
+                      icon: const Icon(Icons.storefront_rounded, size: 18),
+                      label: const Text("Marketplace"),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: isDark ? Colors.white : const Color(0xFF1E293B),
+                        side: BorderSide(color: isDark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.1)),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => Navigator.pushNamed(context, '/photo_scan'),
-                      icon: const Icon(Icons.photo_camera_rounded, size: 18),
-                      label: const Text("Scan"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF72585),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                      ),
-                    ),
-                  ),
+                  )
                 ],
               ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => Navigator.pushNamed(context, '/explore'),
-                  icon: const Icon(Icons.storefront_rounded, size: 18),
-                  label: const Text("Marketplace"),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: isDark ? Colors.white : const Color(0xFF1E293B),
-                    side: BorderSide(color: isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.1)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                  ),
-                ),
-              )
-            ],
+            ),
           ),
         ),
         const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            gradient: LinearGradient(
-              colors: isDark 
-                  ? [const Color(0xFF282A36).withOpacity(0.85), const Color(0xFF161620).withOpacity(0.95)]
-                  : [Colors.white.withOpacity(0.9), Colors.white.withOpacity(0.6)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.5),
+                border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white),
+                boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
+              ),
+              child: Text(
+                "“A neon-lit sci-fi car parked in a rainy alley, cinematic lighting.”\n\nPrompt → 3D preview in under 60s.",
+                style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 13),
+              ),
             ),
-            border: Border.all(color: isDark ? Colors.white.withOpacity(0.16) : Colors.white),
-            boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
-          ),
-          child: Text(
-            "“A neon-lit sci-fi car parked in a rainy alley, cinematic lighting.”\n\nPrompt → 3D preview in under 60s.",
-            style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 13),
           ),
         ),
       ],
@@ -1142,7 +1157,7 @@ class _MiniStatCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           decoration: BoxDecoration(
-            color: isDark ? Colors.black.withOpacity(0.18) : Colors.white.withOpacity(0.85),
+            color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.7),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.white),
             boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
@@ -1285,69 +1300,75 @@ class _ContinueCardState extends State<_ContinueCard> {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          transform: Matrix4.identity()..translate(0.0, (_hover && isWeb) ? -5.0 : 0.0),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.black.withOpacity(0.20) : Colors.white.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: _hover 
-                  ? (isDark ? Colors.white.withOpacity(0.20) : Colors.black.withOpacity(0.1)) 
-                  : (isDark ? Colors.white.withOpacity(0.12) : Colors.white),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              transform: Matrix4.identity()..translate(0.0, (_hover && isWeb) ? -5.0 : 0.0),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: _hover 
+                      ? (isDark ? Colors.white.withOpacity(0.20) : Colors.black.withOpacity(0.1)) 
+                      : (isDark ? Colors.white.withOpacity(0.12) : Colors.white),
+                ),
+                boxShadow: [
+                  if (isDark)
+                    BoxShadow(
+                      blurRadius: _hover ? 24 : 18,
+                      color: Colors.black.withOpacity(_hover ? 0.45 : 0.30),
+                      offset: const Offset(0, 12),
+                    )
+                  else
+                    BoxShadow(
+                      blurRadius: _hover ? 16 : 8,
+                      color: Colors.black.withOpacity(0.04),
+                      offset: const Offset(0, 4),
+                    )
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: accent.withOpacity(0.18),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: accent.withOpacity(0.55)),
+                    ),
+                    child: Icon(icon, color: isDark ? Colors.white : accent, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w900, fontSize: 14),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: isDark ? Colors.white.withOpacity(0.70) : Colors.black54, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_rounded, color: isDark ? Colors.white70 : Colors.black38),
+                ],
+              ),
             ),
-            boxShadow: [
-              if (isDark)
-                BoxShadow(
-                  blurRadius: _hover ? 24 : 18,
-                  color: Colors.black.withOpacity(_hover ? 0.45 : 0.30),
-                  offset: const Offset(0, 12),
-                )
-              else
-                BoxShadow(
-                  blurRadius: _hover ? 16 : 8,
-                  color: Colors.black.withOpacity(0.04),
-                  offset: const Offset(0, 4),
-                )
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: accent.withOpacity(0.18),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: accent.withOpacity(0.55)),
-                ),
-                child: Icon(icon, color: isDark ? Colors.white : accent, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w900, fontSize: 14),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: isDark ? Colors.white.withOpacity(0.70) : Colors.black54, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.arrow_forward_rounded, color: isDark ? Colors.white70 : Colors.black38),
-            ],
           ),
         ),
       ),
@@ -1530,13 +1551,13 @@ class _UseCaseTileState extends State<_UseCaseTile> {
     
     if (isDark) {
       switch (t) {
-        case 'film production': return [const Color(0xFF9CA3AF).withOpacity(.62), const Color(0xFF111827).withOpacity(.28)];
-        case 'product design': return [const Color(0xFF38BDF8).withOpacity(.78), const Color(0xFF2563EB).withOpacity(.34)];
-        case 'education': return [const Color(0xFFFDE68A).withOpacity(.70), const Color(0xFFB45309).withOpacity(.28)];
-        case 'game development': return [const Color(0xFF22D3EE).withOpacity(.74), const Color(0xFF0EA5E9).withOpacity(.30)];
-        case '3d printing': return [const Color(0xFFA3E635).withOpacity(.70), const Color(0xFF16A34A).withOpacity(.28)];
-        case 'vr/ar': return [const Color(0xFFC084FC).withOpacity(.72), const Color(0xFFFB7185).withOpacity(.28)];
-        case 'interior design': return [const Color(0xFFFCA5A5).withOpacity(.68), const Color(0xFFF59E0B).withOpacity(.24)];
+        case 'film production': return [const Color(0xFF9CA3AF).withOpacity(.4), const Color(0xFF111827).withOpacity(.15)];
+        case 'product design': return [const Color(0xFF38BDF8).withOpacity(.4), const Color(0xFF2563EB).withOpacity(.15)];
+        case 'education': return [const Color(0xFFFDE68A).withOpacity(.4), const Color(0xFFB45309).withOpacity(.15)];
+        case 'game development': return [const Color(0xFF22D3EE).withOpacity(.4), const Color(0xFF0EA5E9).withOpacity(.15)];
+        case '3d printing': return [const Color(0xFFA3E635).withOpacity(.4), const Color(0xFF16A34A).withOpacity(.15)];
+        case 'vr/ar': return [const Color(0xFFC084FC).withOpacity(.4), const Color(0xFFFB7185).withOpacity(.15)];
+        case 'interior design': return [const Color(0xFFFCA5A5).withOpacity(.4), const Color(0xFFF59E0B).withOpacity(.15)];
         default: return [Colors.white.withOpacity(.18), Colors.white.withOpacity(.06)];
       }
     } else {
@@ -1562,115 +1583,121 @@ class UseCaseDetailsSection extends StatelessWidget {
     final Color accent = (data["accent"] as Color?) ?? const Color(0xFFBC70FF);
     final bullets = (data["bullets"] as List?)?.cast<String>() ?? const <String>[];
 
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.black.withOpacity(0.22) : Colors.white.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.white),
-        boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 4,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  data["title"] ?? "",
-                  style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 44, height: 1.05, fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  data["subtitle"] ?? "",
-                  style: TextStyle(color: isDark ? Colors.white.withOpacity(0.78) : Colors.black87, fontSize: 15, height: 1.45),
-                ),
-                const SizedBox(height: 22),
-                for (final b in bullets)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 22,
-                          height: 22,
-                          decoration: BoxDecoration(
-                            color: accent.withOpacity(0.20),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: accent.withOpacity(0.60), width: 1),
-                          ),
-                          child: Icon(Icons.check, size: 14, color: accent),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            b,
-                            style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 16, fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 18),
-                ElevatedButton.icon(
-                  onPressed: onCta,
-                  icon: const Icon(Icons.arrow_forward_rounded),
-                  label: Text(data["cta"] ?? "Explore More"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? accent.withOpacity(0.18) : accent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                    side: isDark ? BorderSide(color: accent.withOpacity(0.55), width: 1) : BorderSide.none,
-                  ),
-                ),
-              ],
-            ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(26),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.7),
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.white),
+            boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))],
           ),
-          const SizedBox(width: 22),
-          Expanded(
-            flex: 5,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: Container(
-                height: 360,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04),
-                  border: Border.all(color: isDark ? Colors.white.withOpacity(0.10) : Colors.transparent),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Stack(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 4,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Positioned.fill(
-                      child: Image.asset(
-                        data["preview"] ?? "",
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            Center(child: Icon(Icons.image_outlined, color: isDark ? Colors.white.withOpacity(0.5) : Colors.black26, size: 48)),
-                      ),
+                    Text(
+                      data["title"] ?? "",
+                      style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 44, height: 1.05, fontWeight: FontWeight.w800),
                     ),
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.bottomLeft,
-                            end: Alignment.topRight,
-                            colors: [
-                              isDark ? Colors.black.withOpacity(0.30) : Colors.white.withOpacity(0.5), 
-                              Colors.transparent
-                            ],
-                          ),
+                    const SizedBox(height: 14),
+                    Text(
+                      data["subtitle"] ?? "",
+                      style: TextStyle(color: isDark ? Colors.white.withOpacity(0.78) : Colors.black87, fontSize: 15, height: 1.45),
+                    ),
+                    const SizedBox(height: 22),
+                    for (final b in bullets)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: accent.withOpacity(0.20),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: accent.withOpacity(0.60), width: 1),
+                              ),
+                              child: Icon(Icons.check, size: 14, color: isDark ? Colors.white : accent),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                b,
+                                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 16, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
+                    const SizedBox(height: 18),
+                    ElevatedButton.icon(
+                      onPressed: onCta,
+                      icon: const Icon(Icons.arrow_forward_rounded),
+                      label: Text(data["cta"] ?? "Explore More"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDark ? accent.withOpacity(0.18) : accent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        side: isDark ? BorderSide(color: accent.withOpacity(0.55), width: 1) : BorderSide.none,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
+              const SizedBox(width: 22),
+              Expanded(
+                flex: 5,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    height: 360,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04),
+                      border: Border.all(color: isDark ? Colors.white.withOpacity(0.10) : Colors.transparent),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Image.asset(
+                            data["preview"] ?? "",
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                Center(child: Icon(Icons.image_outlined, color: isDark ? Colors.white.withOpacity(0.5) : Colors.black26, size: 48)),
+                          ),
+                        ),
+                        Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomLeft,
+                                end: Alignment.topRight,
+                                colors: [
+                                  isDark ? Colors.black.withOpacity(0.30) : Colors.white.withOpacity(0.5), 
+                                  Colors.transparent
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1693,97 +1720,103 @@ class UseCaseDetailsSectionMobile extends StatelessWidget {
     final Color accent = (data["accent"] as Color?) ?? const Color(0xFFBC70FF);
     final bullets = (data["bullets"] as List?)?.cast<String>() ?? const <String>[];
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.black.withOpacity(0.20) : Colors.white.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: isDark ? Colors.white.withOpacity(0.10) : Colors.white),
-        boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            data["title"] ?? "",
-            style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 26, height: 1.1, fontWeight: FontWeight.w800),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.7),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(0.10) : Colors.white),
+            boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))],
           ),
-          const SizedBox(height: 10),
-          Text(
-            data["subtitle"] ?? "",
-            style: TextStyle(color: isDark ? Colors.white.withOpacity(0.78) : Colors.black87, fontSize: 13.5, height: 1.4),
-          ),
-          const SizedBox(height: 12),
-          for (final b in bullets.take(3))
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                children: [
-                  Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: accent.withOpacity(0.18),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: accent.withOpacity(0.55), width: 1),
-                    ),
-                    child: Icon(Icons.check, size: 12, color: accent),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      b,
-                      style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 13.5, fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                data["title"] ?? "",
+                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 26, height: 1.1, fontWeight: FontWeight.w800),
               ),
-            ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: SizedBox(
-              height: 180,
-              width: double.infinity,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Image.asset(
-                      data["preview"] ?? "",
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          Center(child: Icon(Icons.image_outlined, color: isDark ? Colors.white.withOpacity(0.5) : Colors.black26, size: 42)),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomLeft,
-                          end: Alignment.topRight,
-                          colors: [isDark ? Colors.black.withOpacity(0.28) : Colors.white.withOpacity(0.3), Colors.transparent],
+              const SizedBox(height: 10),
+              Text(
+                data["subtitle"] ?? "",
+                style: TextStyle(color: isDark ? Colors.white.withOpacity(0.78) : Colors.black87, fontSize: 13.5, height: 1.4),
+              ),
+              const SizedBox(height: 12),
+              for (final b in bullets.take(3))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 18,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: accent.withOpacity(0.18),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: accent.withOpacity(0.55), width: 1),
+                        ),
+                        child: Icon(Icons.check, size: 12, color: isDark ? Colors.white : accent),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          b,
+                          style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 13.5, fontWeight: FontWeight.w700),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: SizedBox(
+                  height: 180,
+                  width: double.infinity,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Image.asset(
+                          data["preview"] ?? "",
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              Center(child: Icon(Icons.image_outlined, color: isDark ? Colors.white.withOpacity(0.5) : Colors.black26, size: 42)),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomLeft,
+                              end: Alignment.topRight,
+                              colors: [isDark ? Colors.black.withOpacity(0.28) : Colors.white.withOpacity(0.3), Colors.transparent],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: onCta,
+                icon: const Icon(Icons.arrow_forward_rounded),
+                label: Text(data["cta"] ?? "Explore More"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isDark ? accent.withOpacity(0.18) : accent,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  side: isDark ? BorderSide(color: accent.withOpacity(0.55), width: 1) : BorderSide.none,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: onCta,
-            icon: const Icon(Icons.arrow_forward_rounded),
-            label: Text(data["cta"] ?? "Explore More"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isDark ? accent.withOpacity(0.18) : accent,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 48),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              side: isDark ? BorderSide(color: accent.withOpacity(0.55), width: 1) : BorderSide.none,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1853,128 +1886,134 @@ class _HomeActionCardState extends State<_HomeActionCard> {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          transform: Matrix4.identity()..translate(0.0, (_hover && isWeb) ? -6.0 : 0.0),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.black.withOpacity(0.22) : Colors.white.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: _hover 
-                  ? (isDark ? Colors.white.withOpacity(0.22) : Colors.black.withOpacity(0.1)) 
-                  : (isDark ? Colors.white.withOpacity(0.12) : Colors.white),
-              width: _hover ? 1.3 : 1,
-            ),
-            boxShadow: [
-              if (isDark)
-                BoxShadow(
-                  blurRadius: _hover ? 28 : 18,
-                  color: Colors.black.withOpacity(_hover ? 0.45 : 0.30),
-                  offset: const Offset(0, 12),
-                )
-              else
-                BoxShadow(
-                  blurRadius: _hover ? 15 : 10,
-                  color: Colors.black.withOpacity(0.05),
-                  offset: const Offset(0, 5),
-                )
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: widget.accent.withOpacity(0.18),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: widget.accent.withOpacity(0.55), width: 1),
-                    ),
-                    child: Icon(widget.icon, color: isDark ? Colors.white : widget.accent, size: 22),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w900, fontSize: 16),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          widget.subtitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: isDark ? Colors.white.withOpacity(0.72) : Colors.black54, height: 1.25),
-                        ),
-                      ],
-                    ),
-                  ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              transform: Matrix4.identity()..translate(0.0, (_hover && isWeb) ? -6.0 : 0.0),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: _hover 
+                      ? (isDark ? Colors.white.withOpacity(0.22) : Colors.black.withOpacity(0.1)) 
+                      : (isDark ? Colors.white.withOpacity(0.12) : Colors.white),
+                  width: _hover ? 1.3 : 1,
+                ),
+                boxShadow: [
+                  if (isDark)
+                    BoxShadow(
+                      blurRadius: _hover ? 28 : 18,
+                      color: Colors.black.withOpacity(_hover ? 0.45 : 0.30),
+                      offset: const Offset(0, 12),
+                    )
+                  else
+                    BoxShadow(
+                      blurRadius: _hover ? 15 : 10,
+                      color: Colors.black.withOpacity(0.05),
+                      offset: const Offset(0, 5),
+                    )
                 ],
               ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: widget.bullets
-                    .map((b) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04),
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(color: isDark ? Colors.white.withOpacity(0.10) : Colors.transparent),
-                          ),
-                          child: Text(
-                            b,
-                            style: TextStyle(
-                              color: isDark ? Colors.white.withOpacity(0.88) : Colors.black87,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: widget.accent.withOpacity(0.18),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: widget.accent.withOpacity(0.55), width: 1),
+                        ),
+                        child: Icon(widget.icon, color: isDark ? Colors.white : widget.accent, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w900, fontSize: 16),
                             ),
-                          ),
-                        ))
-                    .toList(),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: widget.onTap,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark ? widget.accent.withOpacity(0.22) : widget.accent,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: isDark ? BorderSide(color: widget.accent.withOpacity(0.55), width: 1) : BorderSide.none,
+                            const SizedBox(height: 2),
+                            Text(
+                              widget.subtitle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(color: isDark ? Colors.white.withOpacity(0.72) : Colors.black54, height: 1.25),
+                            ),
+                          ],
+                        ),
                       ),
-                      child: Text(widget.primaryLabel, style: const TextStyle(fontWeight: FontWeight.w900)),
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: widget.onSecondaryTap,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: isDark ? Colors.white : const Color(0xFF1E293B),
-                        side: BorderSide(color: isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.1)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: widget.bullets
+                        .map((b) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04),
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: isDark ? Colors.white.withOpacity(0.10) : Colors.transparent),
+                              ),
+                              child: Text(
+                                b,
+                                style: TextStyle(
+                                  color: isDark ? Colors.white.withOpacity(0.88) : Colors.black87,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ))
+                        .toList(),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: widget.onTap,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isDark ? widget.accent.withOpacity(0.22) : widget.accent,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: isDark ? BorderSide(color: widget.accent.withOpacity(0.55), width: 1) : BorderSide.none,
+                          ),
+                          child: Text(widget.primaryLabel, style: const TextStyle(fontWeight: FontWeight.w900)),
+                        ),
                       ),
-                      child: Text(widget.secondaryLabel, style: const TextStyle(fontWeight: FontWeight.w800)),
-                    ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: widget.onSecondaryTap,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: isDark ? Colors.white : const Color(0xFF1E293B),
+                            side: BorderSide(color: isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.1)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          child: Text(widget.secondaryLabel, style: const TextStyle(fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -2010,7 +2049,7 @@ class _GlassSmallAction extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isDark ? Colors.black.withOpacity(0.18) : Colors.white.withOpacity(0.85),
+              color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.7),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.white),
               boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
@@ -2244,7 +2283,7 @@ class _GlassBottomNavBar extends StatelessWidget {
             child: Container(
               height: 72,
               decoration: BoxDecoration(
-                color: isDark ? Colors.black.withOpacity(0.30) : Colors.white.withOpacity(0.85),
+                color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.85),
                 borderRadius: BorderRadius.circular(999),
                 border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.white),
                 boxShadow: [
@@ -2335,6 +2374,85 @@ class _BottomItem {
   final IconData icon;
   final String semantics;
   const _BottomItem({required this.icon, required this.semantics});
+}
+
+// ==========================================
+// BACKGROUND LAYERS
+// ==========================================
+
+class _ReactHeroBackground extends StatelessWidget {
+  final bool isDark;
+  
+  const _ReactHeroBackground({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: 90, sigmaY: 90),
+        child: Stack(
+          children: [
+            // Blobs simulating the skew gradients
+            Positioned(
+              top: -150,
+              right: -50,
+              child: Transform.rotate(
+                angle: -0.35,
+                child: Row(
+                  children: [
+                    _GradientBlob(isDark: isDark),
+                    const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark),
+                    const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: -50,
+              right: -150,
+              child: Transform.rotate(
+                angle: -0.35, 
+                child: Row(
+                  children: [
+                    _GradientBlob(isDark: isDark),
+                    const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GradientBlob extends StatelessWidget {
+  final bool isDark;
+  const _GradientBlob({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform(
+      transform: Matrix4.skewY(-0.7),
+      child: Container(
+        width: 140,
+        height: 400,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark 
+                ? [Colors.white.withOpacity(0.15), Colors.blue.shade300.withOpacity(0.35)]
+                : [const Color(0xFFBC70FF).withOpacity(0.25), const Color(0xFF4895EF).withOpacity(0.25)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MeshyParticleBackground extends StatelessWidget {

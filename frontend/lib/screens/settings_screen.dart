@@ -5,7 +5,6 @@ import 'package:flutter/scheduler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../api/r2v_api.dart';
 import '../api/api_exception.dart';
-import 'widgets/web_top_bar.dart';
 import '../main.dart'; // Needed for themeNotifier
 
 class SettingsScreen extends StatefulWidget {
@@ -52,16 +51,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bool isWeb = w >= 900;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Stack(
-      children: [
-        Positioned.fill(child: MeshyParticleBackground(isDark: isDark)),
-        Scaffold(
-          backgroundColor: Colors.transparent,
-          body: SafeArea(
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0C0414) : const Color(0xFFF8FAFC),
+      body: Stack(
+        children: [
+          Positioned.fill(child: MeshyParticleBackground(isDark: isDark)),
+          Positioned.fill(child: _ReactHeroBackground(isDark: isDark)),
+          SafeArea(
             child: isWeb ? _buildWebLayout(isDark) : _buildMobileLayout(isDark),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -74,8 +74,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         constraints: BoxConstraints(maxWidth: contentWidth),
         child: Column(
           children: [
-            const SizedBox(height: 12),
-            const WebTopBar(activeIndex: 3),
+            const SizedBox(height: 20),
+            _GlassTopBar(
+              activeIndex: 3,
+              hoverIndex: null,
+              isDark: isDark,
+              onHover: (_) {},
+              onLeave: () {},
+              onNavTap: (idx) {
+                switch (idx) {
+                  case 0: Navigator.pushNamed(context, '/home'); break;
+                  case 1: Navigator.pushNamed(context, '/aichat'); break;
+                  case 2: Navigator.pushNamed(context, '/explore'); break;
+                  case 3: break;
+                }
+              },
+              onProfile: () => Navigator.pushNamed(context, '/profile'),
+            ),
             const SizedBox(height: 24),
             Expanded(
               child: Row(
@@ -104,6 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+            physics: const BouncingScrollPhysics(),
             child: _buildRightPanelCard(isDark),
           ),
         ),
@@ -173,12 +189,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: () => setState(() => selectedSection = index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         decoration: BoxDecoration(
           color: active 
-              ? (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06)) 
+              ? (isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.06)) 
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: active 
                 ? (isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.05)) 
@@ -200,7 +216,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ? (isDark ? Colors.white : const Color(0xFF1E293B)) 
                     : (isDark ? Colors.white70 : Colors.black54),
                 fontSize: 14.5,
-                fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ],
@@ -221,9 +237,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           color: color.withOpacity(isDark ? 0.15 : 0.1),
-          border: Border.all(color: color.withOpacity(isDark ? 0.7 : 0.3)),
+          border: Border.all(color: color.withOpacity(isDark ? 0.4 : 0.3)),
         ),
         child: Row(
           children: [
@@ -234,7 +250,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: TextStyle(
                 color: color,
                 fontSize: 14.5,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -245,18 +261,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildRightPanel(bool isDark) {
     switch (selectedSection) {
-      case 0:
-        return _buildAccountSection(isDark);
-      case 1:
-        return _buildPrivacySection(isDark);
-      case 2:
-        return _buildNotificationSection(isDark);
-      case 3:
-        return _buildAppearanceSection(isDark);
-      case 4:
-        return _buildSubscriptionSection(isDark);
-      default:
-        return _buildAccountSection(isDark);
+      case 0: return _buildAccountSection(isDark);
+      case 1: return _buildPrivacySection(isDark);
+      case 2: return _buildNotificationSection(isDark);
+      case 3: return _buildAppearanceSection(isDark);
+      case 4: return _buildSubscriptionSection(isDark);
+      default: return _buildAccountSection(isDark);
     }
   }
 
@@ -267,42 +277,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       isDark: isDark,
       children: [
         if (_loadingProfile)
-          _infoBanner(
-            icon: Icons.hourglass_bottom,
-            message: "Loading profile details...",
-            isDark: isDark,
-          ),
+          _infoBanner(icon: Icons.hourglass_bottom, message: "Loading profile details...", isDark: isDark),
         if (_profileError != null)
-          _infoBanner(
-            icon: Icons.info_outline,
-            message: _profileError!,
-            isDark: isDark,
-          ),
+          _infoBanner(icon: Icons.info_outline, message: _profileError!, isDark: isDark),
         _glassTextField(
-          controller: _usernameController,
-          label: "Display name",
-          hint: "Your public profile name",
-          icon: Icons.person_outline,
-          enabled: !_savingProfile && !_loadingProfile,
-          isDark: isDark,
+          controller: _usernameController, label: "Display name", hint: "Your public profile name",
+          icon: Icons.person_outline, enabled: !_savingProfile && !_loadingProfile, isDark: isDark,
         ),
         const SizedBox(height: 16),
         _glassTextField(
-          controller: _emailController,
-          label: "Email",
-          hint: "Email address",
-          icon: Icons.email_outlined,
-          enabled: false,
-          isDark: isDark,
+          controller: _emailController, label: "Email", hint: "Email address",
+          icon: Icons.email_outlined, enabled: false, isDark: isDark,
         ),
         const SizedBox(height: 16),
         _glassTextField(
-          controller: _phoneController,
-          label: "Phone",
-          hint: "Add a phone for recovery",
-          icon: Icons.phone_outlined,
-          enabled: !_savingProfile && !_loadingProfile,
-          isDark: isDark,
+          controller: _phoneController, label: "Phone", hint: "Add a phone for recovery",
+          icon: Icons.phone_outlined, enabled: !_savingProfile && !_loadingProfile, isDark: isDark,
         ),
         const SizedBox(height: 18),
         Align(
@@ -310,20 +300,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: ElevatedButton.icon(
             onPressed: _savingProfile ? null : _saveProfile,
             icon: _savingProfile
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.save_outlined),
             label: Text(_savingProfile ? "Saving..." : "Save changes"),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFBC70FF),
+              backgroundColor: const Color(0xFF8A4FFF),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
           ),
         ),
@@ -333,26 +317,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildPrivacySection(bool isDark) {
     return _sectionWrapper(
-      title: "Privacy Settings",
-      subtitle: "Keep your account secure with quick actions.",
-      isDark: isDark,
+      title: "Privacy Settings", subtitle: "Keep your account secure with quick actions.", isDark: isDark,
       children: [
         _actionTile(
-          icon: Icons.lock_reset,
-          title: "Reset password",
-          subtitle: "Send a reset email to secure your account.",
-          actionLabel: "Send email",
-          onTap: () => Navigator.pushNamed(context, '/forgot'),
-          isDark: isDark,
+          icon: Icons.lock_reset, title: "Reset password", subtitle: "Send a reset email to secure your account.",
+          actionLabel: "Send email", onTap: () => Navigator.pushNamed(context, '/forgot'), isDark: isDark,
         ),
         const SizedBox(height: 16),
         _actionTile(
-          icon: Icons.shield_outlined,
-          title: "Two-factor authentication",
-          subtitle: "Add an extra layer of protection to your login.",
-          actionLabel: "Coming soon",
-          onTap: null,
-          isDark: isDark,
+          icon: Icons.shield_outlined, title: "Two-factor authentication", subtitle: "Add an extra layer of protection to your login.",
+          actionLabel: "Coming soon", onTap: null, isDark: isDark,
         ),
       ],
     );
@@ -360,38 +334,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildNotificationSection(bool isDark) {
     return _sectionWrapper(
-      title: "Notifications",
-      subtitle: "Pick what you want to hear about.",
-      isDark: isDark,
+      title: "Notifications", subtitle: "Pick what you want to hear about.", isDark: isDark,
       children: [
-        _switchTile(
-          label: "AI model ready",
-          description: "Get alerted when your generation finishes.",
-          value: notifyAI,
-          onChanged: (v) => setState(() => notifyAI = v),
-          isDark: isDark,
-        ),
+        _switchTile(label: "AI model ready", description: "Get alerted when your generation finishes.", value: notifyAI, onChanged: (v) => setState(() => notifyAI = v), isDark: isDark),
         const SizedBox(height: 12),
-        _switchTile(
-          label: "App updates",
-          description: "Product news and new feature highlights.",
-          value: notifyUpdates,
-          onChanged: (v) => setState(() => notifyUpdates = v),
-          isDark: isDark,
-        ),
+        _switchTile(label: "App updates", description: "Product news and new feature highlights.", value: notifyUpdates, onChanged: (v) => setState(() => notifyUpdates = v), isDark: isDark),
       ],
     );
   }
 
   Widget _buildAppearanceSection(bool isDark) {
     return _sectionWrapper(
-      title: "Appearance",
-      subtitle: "Tune the look and feel to your taste.",
-      isDark: isDark,
+      title: "Appearance", subtitle: "Tune the look and feel to your taste.", isDark: isDark,
       children: [
         _switchTile(
-          label: "Dark mode",
-          description: "Switch between light and dark ambiance.",
+          label: "Dark mode", description: "Switch between light and dark ambiance.",
           value: darkMode,
           onChanged: (v) {
             setState(() {
@@ -403,12 +360,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         const SizedBox(height: 16),
         _actionTile(
-          icon: Icons.palette_outlined,
-          title: "Theme accent",
-          subtitle: "Customize your highlight color.",
-          actionLabel: "Default",
-          onTap: null,
-          isDark: isDark,
+          icon: Icons.palette_outlined, title: "Theme accent", subtitle: "Customize your highlight color.",
+          actionLabel: "Default", onTap: null, isDark: isDark,
         ),
       ],
     );
@@ -416,9 +369,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSubscriptionSection(bool isDark) {
     return _sectionWrapper(
-      title: "Subscription & Billing",
-      subtitle: "Manage your plan and payment preferences.",
-      isDark: isDark,
+      title: "Subscription & Billing", subtitle: "Manage your plan and payment preferences.", isDark: isDark,
       children: [
         _subscriptionSummaryCard(),
         const SizedBox(height: 18),
@@ -431,22 +382,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _subscriptionSummaryCard() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF8A4FFF),
-            Color(0xFFBC70FF),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF8A4FFF).withOpacity(0.35),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(colors: [Color(0xFF8A4FFF), Color(0xFFBC70FF)]),
+        boxShadow: [BoxShadow(color: const Color(0xFF8A4FFF).withOpacity(0.35), blurRadius: 24, offset: const Offset(0, 12))],
       ),
       child: Row(
         children: [
@@ -454,22 +394,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
-                Text("Current Plan",
-                    style: TextStyle(color: Colors.white70, fontSize: 13)),
+                Text("Current Plan", style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
                 SizedBox(height: 4),
-                Text(
-                  "R2V Pro – Monthly",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+                Text("R2V Pro – Monthly", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
                 SizedBox(height: 6),
-                Text(
-                  "\$14.99 / month · Renews on Jan 20, 2026",
-                  style: TextStyle(color: Colors.white, fontSize: 13),
-                ),
+                Text("\$14.99 / month · Renews on Jan 20, 2026", style: TextStyle(color: Colors.white, fontSize: 13.5)),
               ],
             ),
           ),
@@ -477,31 +406,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () async {
               try {
                 final url = await r2vBilling.checkoutSubscription();
-                if (url.isEmpty) {
-                  throw Exception('Missing checkout url');
-                }
-                await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-              } on ApiException catch (e) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(e.message)),
-                );
-              } catch (_) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Unable to open checkout')),
-                );
-              }
+                if (url.isNotEmpty) await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+              } catch (_) {}
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFF8A4FFF),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
+              backgroundColor: Colors.white, foregroundColor: const Color(0xFF8A4FFF),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            child: const Text("Manage Plan"),
+            child: const Text("Manage Plan", style: TextStyle(fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -510,38 +423,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _paymentMethodCard(bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
-        border: Border.all(color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05)),
+        borderRadius: BorderRadius.circular(20),
+        color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.03),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.05)),
       ),
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 46, height: 46,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4895EF), Color(0xFF4CC9F0)],
-              ),
+              borderRadius: BorderRadius.circular(14),
+              gradient: const LinearGradient(colors: [Color(0xFF4895EF), Color(0xFF4CC9F0)]),
             ),
             child: const Icon(Icons.credit_card, color: Colors.white),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Payment Method",
-                    style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontSize: 13)),
+                Text("Payment Method", style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
-                Text("Visa •••• 4821",
-                    style: TextStyle(
-                        color: isDark ? Colors.white : const Color(0xFF1E293B),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600)),
+                Text("Visa •••• 4821", style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 16, fontWeight: FontWeight.w800)),
               ],
             ),
           ),
@@ -549,29 +454,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () async {
               try {
                 final url = await r2vBilling.checkoutSubscription();
-                if (url.isEmpty) {
-                  throw Exception('Missing checkout url');
-                }
-                await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-              } on ApiException catch (e) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(e.message)),
-                );
-              } catch (_) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Unable to open checkout')),
-                );
-              }
+                if (url.isNotEmpty) await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+              } catch (_) {}
             },
-            child: const Text(
-              "Change",
-              style: TextStyle(
-                color: Color(0xFF4CC9F0),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child: const Text("Change", style: TextStyle(color: Color(0xFF4CC9F0), fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -580,20 +466,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _billingNoteCard(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02),
-        border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.05)),
+        borderRadius: BorderRadius.circular(18),
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05)),
       ),
       child: Row(
         children: [
           Icon(Icons.info_outline, color: isDark ? Colors.white70 : Colors.black54),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               "Billing history and invoices will appear here in a future update.",
-              style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontSize: 13),
+              style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontSize: 13.5),
             ),
           ),
         ],
@@ -601,50 +487,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _sectionWrapper({
-    required String title,
-    String? subtitle,
-    required List<Widget> children,
-    required bool isDark,
-  }) {
+  Widget _sectionWrapper({required String title, String? subtitle, required List<Widget> children, required bool isDark}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(28, 28, 28, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? Colors.white : const Color(0xFF1E293B),
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
+          Text(title, style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 24, fontWeight: FontWeight.w900)),
           if (subtitle != null) ...[
             const SizedBox(height: 6),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: isDark ? Colors.white.withOpacity(0.65) : Colors.black54,
-                fontSize: 13,
-              ),
-            ),
+            Text(subtitle, style: TextStyle(color: isDark ? Colors.white.withOpacity(0.65) : Colors.black54, fontSize: 13.5)),
           ],
-          const SizedBox(height: 22),
+          const SizedBox(height: 24),
           ...children,
         ],
       ),
     );
   }
 
-  Widget _glassTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    bool enabled = true,
-    required bool isDark,
-  }) {
+  Widget _glassTextField({required TextEditingController controller, required String label, required String hint, required IconData icon, bool enabled = true, required bool isDark}) {
     return TextField(
       controller: controller,
       enabled: enabled,
@@ -656,38 +517,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
         hintStyle: TextStyle(color: isDark ? Colors.white.withOpacity(0.4) : Colors.black38),
         filled: true,
-        fillColor: isDark 
-            ? Colors.white.withOpacity(enabled ? 0.06 : 0.04) 
-            : Colors.black.withOpacity(enabled ? 0.03 : 0.01),
-        disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.05)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.1)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFBC70FF), width: 1.4),
-        ),
+        fillColor: isDark ? Colors.white.withOpacity(enabled ? 0.08 : 0.04) : Colors.black.withOpacity(enabled ? 0.04 : 0.02),
+        disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.1))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: Color(0xFFBC70FF), width: 1.5)),
       ),
     );
   }
 
-  Widget _switchTile({
-    required String label,
-    required String description,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-    required bool isDark,
-  }) {
+  Widget _switchTile({required String label, required String description, required bool value, required ValueChanged<bool> onChanged, required bool isDark}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.05)),
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
+        color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.03),
       ),
       child: Row(
         children: [
@@ -695,74 +539,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 15)),
+                Text(label, style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: TextStyle(color: isDark ? Colors.white.withOpacity(0.6) : Colors.black54, fontSize: 12.5),
-                ),
+                Text(description, style: TextStyle(color: isDark ? Colors.white.withOpacity(0.65) : Colors.black54, fontSize: 13)),
               ],
             ),
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: const Color(0xFFBC70FF),
-          ),
+          Switch(value: value, onChanged: onChanged, activeColor: const Color(0xFFBC70FF)),
         ],
       ),
     );
   }
 
-  Widget _actionTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required String actionLabel,
-    required VoidCallback? onTap,
-    required bool isDark,
-  }) {
+  Widget _actionTile({required IconData icon, required String title, required String subtitle, required String actionLabel, required VoidCallback? onTap, required bool isDark}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.05)),
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
+        color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.03),
       ),
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.05),
-            ),
+            width: 44, height: 44,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05)),
             child: Icon(icon, color: isDark ? Colors.white : const Color(0xFF1E293B)),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 14.5)),
+                Text(title, style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 15.5, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(color: isDark ? Colors.white.withOpacity(0.6) : Colors.black54, fontSize: 12.5),
-                ),
+                Text(subtitle, style: TextStyle(color: isDark ? Colors.white.withOpacity(0.65) : Colors.black54, fontSize: 13)),
               ],
             ),
           ),
           TextButton(
             onPressed: onTap,
-            child: Text(
-              actionLabel,
-              style: TextStyle(
-                color: onTap == null ? (isDark ? Colors.white38 : Colors.black26) : const Color(0xFFBC70FF),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child: Text(actionLabel, style: TextStyle(color: onTap == null ? (isDark ? Colors.white38 : Colors.black26) : const Color(0xFFBC70FF), fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -771,22 +588,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _infoBanner({required IconData icon, required String message, required bool isDark}) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.03),
-        border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.05)),
+        borderRadius: BorderRadius.circular(16),
+        color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.04),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05)),
       ),
       child: Row(
         children: [
           Icon(icon, color: isDark ? Colors.white70 : Colors.black54),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              message,
-              style: TextStyle(color: isDark ? Colors.white.withOpacity(0.75) : Colors.black87, fontSize: 12.5),
-            ),
+            child: Text(message, style: TextStyle(color: isDark ? Colors.white.withOpacity(0.85) : Colors.black87, fontSize: 13.5, fontWeight: FontWeight.w500)),
           ),
         ],
       ),
@@ -794,33 +608,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildRightPanelCard(bool isDark) {
-    return _glassPanel(
-      isDark: isDark,
-      padding: EdgeInsets.zero,
-      child: _buildRightPanel(isDark),
-    );
+    return _glassPanel(isDark: isDark, padding: EdgeInsets.zero, child: _buildRightPanel(isDark));
   }
 
-  Widget _glassPanel({
-    required Widget child,
-    required bool isDark,
-    EdgeInsetsGeometry padding = const EdgeInsets.all(24),
-    double? width,
-  }) {
+  Widget _glassPanel({required Widget child, required bool isDark, EdgeInsetsGeometry padding = const EdgeInsets.all(24), double? width}) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(26),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Container(
-          width: width,
-          padding: padding,
+          width: width, padding: padding,
           decoration: BoxDecoration(
-            color: isDark ? Colors.black.withOpacity(0.42) : Colors.white.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(24),
+            color: isDark ? Colors.black.withOpacity(0.2) : Colors.white.withOpacity(0.85),
+            borderRadius: BorderRadius.circular(26),
             border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.white.withOpacity(0.9)),
-            boxShadow: isDark ? [] : [
-              BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 10))
-            ],
+            boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 10))],
           ),
           child: child,
         ),
@@ -835,11 +637,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Row(
         children: [
           const Icon(Icons.settings, color: Color(0xFFBC70FF)),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               "Settings",
-              style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 18, fontWeight: FontWeight.w700),
+              style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 18, fontWeight: FontWeight.w800),
             ),
           ),
           IconButton(
@@ -852,55 +654,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _logout() async {
-    try {
-      await r2vAuth.logout();
-    } catch (_) {
-      // ignore logout errors; we'll still navigate away
-    }
+    try { await r2vAuth.logout(); } catch (_) {}
     if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/signin');
   }
 
   void _showDeleteDialog() {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1A1B20) : Colors.white,
-        title: const Text(
-          "Delete Account",
-          style: TextStyle(color: Colors.red),
-        ),
-        content: Text(
-          "This action is permanent and cannot be undone.",
-          style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
-        ),
+        title: const Text("Delete Account", style: TextStyle(color: Colors.red)),
+        content: Text("This action is permanent and cannot be undone.", style: TextStyle(color: isDark ? Colors.white70 : Colors.black87)),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Cancel", style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text("Cancel", style: TextStyle(color: isDark ? Colors.white70 : Colors.black54))),
           TextButton(
             onPressed: () async {
               try {
                 await r2vProfile.deleteAccount();
                 await r2vAuth.logout();
-              } on ApiException catch (e) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(e.message)),
-                );
-                return;
-              } catch (_) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Failed to delete account')),
-                );
-                return;
-              }
-              if (!mounted) return;
-              Navigator.pushReplacementNamed(context, '/signin');
+                if (mounted) Navigator.pushReplacementNamed(context, '/signin');
+              } catch (_) {}
             },
             child: const Text("Delete", style: TextStyle(color: Colors.red)),
           ),
@@ -910,11 +685,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadProfile() async {
-    setState(() {
-      _loadingProfile = true;
-      _profileError = null;
-    });
-
+    setState(() { _loadingProfile = true; _profileError = null; });
     try {
       final data = await r2vProfile.me();
       if (!mounted) return;
@@ -925,36 +696,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _phoneController.text = _profileMeta['phone']?.toString() ?? '';
       });
     } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() => _profileError = e.message);
+      if (mounted) setState(() => _profileError = e.message);
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _profileError = 'Unable to load profile settings');
+      if (mounted) setState(() => _profileError = 'Unable to load profile settings');
     } finally {
-      if (mounted) {
-        setState(() => _loadingProfile = false);
-      }
+      if (mounted) setState(() => _loadingProfile = false);
     }
   }
 
   Future<void> _saveProfile() async {
-    setState(() {
-      _savingProfile = true;
-      _profileError = null;
-    });
-
+    setState(() { _savingProfile = true; _profileError = null; });
     try {
-      final username = _usernameController.text.trim();
       final phone = _phoneController.text.trim();
       final updatedMeta = Map<String, dynamic>.from(_profileMeta);
-      if (phone.isEmpty) {
-        updatedMeta.remove('phone');
-      } else {
-        updatedMeta['phone'] = phone;
-      }
+      if (phone.isEmpty) updatedMeta.remove('phone'); else updatedMeta['phone'] = phone;
 
       final data = await r2vProfile.update(
-        username: username.isEmpty ? null : username,
+        username: _usernameController.text.trim().isEmpty ? null : _usernameController.text.trim(),
         meta: updatedMeta,
       );
       if (!mounted) return;
@@ -962,20 +720,251 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _profileMeta = Map<String, dynamic>.from(data.meta);
         _usernameController.text = data.username;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Settings updated successfully')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings updated successfully')));
     } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() => _profileError = e.message);
+      if (mounted) setState(() => _profileError = e.message);
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _profileError = 'Unable to save settings');
+      if (mounted) setState(() => _profileError = 'Unable to save settings');
     } finally {
-      if (mounted) {
-        setState(() => _savingProfile = false);
-      }
+      if (mounted) setState(() => _savingProfile = false);
     }
+  }
+}
+
+// ---------------------------------------------------------
+// TOP BAR
+// ---------------------------------------------------------
+class _GlassTopBar extends StatelessWidget {
+  final int activeIndex;
+  final int? hoverIndex;
+  final void Function(int? idx) onHover;
+  final VoidCallback onLeave;
+  final void Function(int idx) onNavTap;
+  final VoidCallback onProfile;
+  final bool isDark;
+
+  const _GlassTopBar({
+    required this.activeIndex,
+    required this.hoverIndex,
+    required this.onHover,
+    required this.onLeave,
+    required this.onNavTap,
+    required this.onProfile,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.75),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.9)),
+            boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))],
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.auto_awesome_rounded, size: 26, color: Color(0xFFBC70FF)),
+              const SizedBox(width: 8),
+              Text(
+                "R2V Studio",
+                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.w800),
+              ),
+              const Spacer(),
+              SizedBox(
+                width: 380,
+                child: _TopTabs(
+                  activeIndex: activeIndex,
+                  hoverIndex: hoverIndex,
+                  isDark: isDark,
+                  onHover: onHover,
+                  onLeave: onLeave,
+                  onTap: onNavTap,
+                ),
+              ),
+              const SizedBox(width: 16),
+              GestureDetector(
+                onTap: onProfile,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.person, color: isDark ? Colors.white : const Color(0xFF1E293B), size: 20),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TopTabs extends StatelessWidget {
+  final int activeIndex;
+  final int? hoverIndex;
+  final void Function(int? idx) onHover;
+  final VoidCallback onLeave;
+  final void Function(int idx) onTap;
+  final bool isDark;
+
+  const _TopTabs({
+    required this.activeIndex,
+    required this.hoverIndex,
+    required this.onHover,
+    required this.onLeave,
+    required this.onTap,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = ["Home", "AI Studio", "Marketplace", "Settings"];
+    final navCount = labels.length;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalWidth = constraints.maxWidth;
+        final segmentWidth = totalWidth / navCount;
+        const indicatorWidth = 48.0;
+
+        final underlineIndex = (hoverIndex ?? activeIndex).clamp(0, navCount - 1);
+        final underlineLeft = underlineIndex * segmentWidth + (segmentWidth - indicatorWidth) / 2;
+
+        return SizedBox(
+          height: 34,
+          child: Stack(
+            children: [
+              Row(
+                children: List.generate(navCount, (index) {
+                  final isActive = activeIndex == index;
+                  final isHover = hoverIndex == index;
+                  final effective = isActive || isHover;
+
+                  return MouseRegion(
+                    onEnter: (_) => onHover(index),
+                    onExit: (_) => onHover(null),
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () => onTap(index),
+                      child: SizedBox(
+                        width: segmentWidth,
+                        child: Center(
+                          child: AnimatedDefaultTextStyle(
+                            duration: const Duration(milliseconds: 120),
+                            style: TextStyle(
+                              color: effective 
+                                  ? (isDark ? Colors.white : const Color(0xFF1E293B)) 
+                                  : (isDark ? Colors.white60 : Colors.black54),
+                              fontWeight: effective ? FontWeight.w700 : FontWeight.w500,
+                              fontSize: 13.5,
+                            ),
+                            child: Text(labels[index]),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                left: underlineLeft,
+                bottom: 0,
+                child: Container(
+                  width: indicatorWidth,
+                  height: 2,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFBC70FF),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ---------------------------------------------------------
+// BACKGROUNDS
+// ---------------------------------------------------------
+
+class _ReactHeroBackground extends StatelessWidget {
+  final bool isDark;
+  
+  const _ReactHeroBackground({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: 90, sigmaY: 90),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -150, right: -50,
+              child: Transform.rotate(
+                angle: -0.35,
+                child: Row(
+                  children: [
+                    _GradientBlob(isDark: isDark), const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark), const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: -50, right: -150,
+              child: Transform.rotate(
+                angle: -0.35, 
+                child: Row(
+                  children: [
+                    _GradientBlob(isDark: isDark), const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GradientBlob extends StatelessWidget {
+  final bool isDark;
+  const _GradientBlob({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform(
+      transform: Matrix4.skewY(-0.7),
+      child: Container(
+        width: 140, height: 400,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark 
+                ? [Colors.white.withOpacity(0.15), Colors.blue.shade300.withOpacity(0.35)]
+                : [const Color(0xFFBC70FF).withOpacity(0.25), const Color(0xFF4895EF).withOpacity(0.25)],
+            begin: Alignment.centerLeft, end: Alignment.centerRight,
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -1000,11 +989,9 @@ class _MeshyBgCore extends StatefulWidget {
 class _MeshyBgCoreState extends State<_MeshyBgCore> with SingleTickerProviderStateMixin {
   late final Ticker _ticker;
   final Random _rng = Random(42);
-
   Size _size = Size.zero;
   Offset _mouse = Offset.zero;
   bool _hasMouse = false;
-
   late List<_Particle> _ps;
   double _t = 0;
 
@@ -1014,9 +1001,7 @@ class _MeshyBgCoreState extends State<_MeshyBgCore> with SingleTickerProviderSta
     _ps = <_Particle>[];
     _ticker = createTicker((elapsed) {
       _t = elapsed.inMilliseconds / 1000.0;
-      if (!mounted) return;
-      if (_size == Size.zero) return;
-
+      if (!mounted || _size == Size.zero) return;
       const dt = 1 / 60;
       for (final p in _ps) {
         p.pos = p.pos + p.vel * dt;
@@ -1030,27 +1015,16 @@ class _MeshyBgCoreState extends State<_MeshyBgCore> with SingleTickerProviderSta
   }
 
   @override
-  void dispose() {
-    _ticker.dispose();
-    super.dispose();
-  }
+  void dispose() { _ticker.dispose(); super.dispose(); }
 
   void _ensureParticles(Size s) {
     if (s == Size.zero) return;
-
-    final area = s.width * s.height;
-    int target = (area / 18000).round();
-    target = target.clamp(35, 95);
-
+    int target = ((s.width * s.height) / 18000).round().clamp(35, 95);
     if (_ps.length == target) return;
-
     _ps = List.generate(target, (i) {
       final pos = Offset(_rng.nextDouble() * s.width, _rng.nextDouble() * s.height);
-      final speed = 8 + _rng.nextDouble() * 18;
-      final ang = _rng.nextDouble() * pi * 2;
-      final vel = Offset(cos(ang), sin(ang)) * speed;
-      final r = 1.2 + _rng.nextDouble() * 1.9;
-      return _Particle(pos: pos, vel: vel, radius: r);
+      final vel = Offset(cos(_rng.nextDouble() * pi * 2), sin(_rng.nextDouble() * pi * 2)) * (8 + _rng.nextDouble() * 18);
+      return _Particle(pos: pos, vel: vel, radius: 1.2 + _rng.nextDouble() * 1.9);
     });
   }
 
@@ -1058,147 +1032,59 @@ class _MeshyBgCoreState extends State<_MeshyBgCore> with SingleTickerProviderSta
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, c) {
       final s = Size(c.maxWidth, c.maxHeight);
-      if (_size != s) {
-        _size = s;
-        _ensureParticles(s);
-      }
-
+      if (_size != s) { _size = s; _ensureParticles(s); }
       return MouseRegion(
-        onHover: (e) {
-          _hasMouse = true;
-          _mouse = e.localPosition;
-        },
+        onHover: (e) { _hasMouse = true; _mouse = e.localPosition; },
         onExit: (_) => _hasMouse = false,
-        child: CustomPaint(
-          painter: _MeshPainter(
-            particles: _ps,
-            time: _t,
-            size: s,
-            mouse: _mouse,
-            hasMouse: _hasMouse,
-            isDark: widget.isDark,
-          ),
-        ),
+        child: CustomPaint(painter: _MeshPainter(particles: _ps, time: _t, size: s, mouse: _mouse, hasMouse: _hasMouse, isDark: widget.isDark)),
       );
     });
   }
 }
 
-class _Particle {
-  Offset pos;
-  Offset vel;
-  final double radius;
-
-  _Particle({required this.pos, required this.vel, required this.radius});
-}
+class _Particle { Offset pos; Offset vel; final double radius; _Particle({required this.pos, required this.vel, required this.radius}); }
 
 class _MeshPainter extends CustomPainter {
-  final List<_Particle> particles;
-  final double time;
-  final Size size;
-  final Offset mouse;
-  final bool hasMouse;
-  final bool isDark;
-
-  _MeshPainter({
-    required this.particles,
-    required this.time,
-    required this.size,
-    required this.mouse,
-    required this.hasMouse,
-    required this.isDark,
-  });
+  final List<_Particle> particles; final double time; final Size size; final Offset mouse; final bool hasMouse; final bool isDark;
+  _MeshPainter({required this.particles, required this.time, required this.size, required this.mouse, required this.hasMouse, required this.isDark});
 
   @override
   void paint(Canvas canvas, Size _) {
     final rect = Offset.zero & size;
-
     final bgColors = isDark 
         ? const [Color(0xFF0F1118), Color(0xFF141625), Color(0xFF0B0D14)]
         : const [Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFE2E8F0)];
+    canvas.drawRect(rect, Paint()..shader = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: bgColors, stops: const [0.0, 0.55, 1.0]).createShader(rect));
 
-    final bg = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: bgColors,
-        stops: const [0.0, 0.55, 1.0],
-      ).createShader(rect);
-    canvas.drawRect(rect, bg);
-
-    void glowBlob(Offset c, double r, Color col, double a) {
-      final p = Paint()
-        ..color = col.withOpacity(a)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 90);
-      canvas.drawCircle(c, r, p);
-    }
-
+    void glowBlob(Offset c, double r, Color col, double a) => canvas.drawCircle(c, r, Paint()..color = col.withOpacity(a)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 90));
     final center = Offset(size.width * 0.55, size.height * 0.35);
     final wobble = Offset(sin(time * 0.5) * 40, cos(time * 0.45) * 30);
-
     glowBlob(center + wobble, 280, isDark ? const Color(0xFF8A4FFF) : const Color(0xFFA855F7), isDark ? 0.18 : 0.12);
-    glowBlob(
-      Offset(size.width * 0.25, size.height * 0.70) + Offset(cos(time * 0.35) * 35, sin(time * 0.32) * 28),
-      240, isDark ? const Color(0xFF4895EF) : const Color(0xFF38BDF8), isDark ? 0.14 : 0.10,
-    );
+    glowBlob(Offset(size.width * 0.25, size.height * 0.70) + Offset(cos(time * 0.35) * 35, sin(time * 0.32) * 28), 240, isDark ? const Color(0xFF4895EF) : const Color(0xFF38BDF8), isDark ? 0.14 : 0.10);
 
-    Offset parallax = Offset.zero;
-    if (hasMouse) {
-      final dx = (mouse.dx / max(1.0, size.width) - 0.5) * 18;
-      final dy = (mouse.dy / max(1.0, size.height) - 0.5) * 18;
-      parallax = Offset(dx, dy);
-    }
-
-    final connectDist = min(size.width, size.height) * 0.15;
-    final connectDist2 = connectDist * connectDist;
-
-    final linePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
+    Offset parallax = hasMouse ? Offset((mouse.dx / max(1.0, size.width) - 0.5) * 18, (mouse.dy / max(1.0, size.height) - 0.5) * 18) : Offset.zero;
+    final connectDist = min(size.width, size.height) * 0.15, connectDist2 = connectDist * connectDist;
+    final linePaint = Paint()..style = PaintingStyle.stroke..strokeWidth = 1;
 
     for (int i = 0; i < particles.length; i++) {
-      final a = particles[i];
-      final ap = a.pos + parallax * 0.25;
-
+      final ap = particles[i].pos + parallax * 0.25;
       for (int j = i + 1; j < particles.length; j++) {
-        final b = particles[j];
-        final bp = b.pos + parallax * 0.25;
-
-        final dx = ap.dx - bp.dx;
-        final dy = ap.dy - bp.dy;
-        final d2 = dx * dx + dy * dy;
-
+        final bp = particles[j].pos + parallax * 0.25;
+        final d2 = (ap.dx - bp.dx) * (ap.dx - bp.dx) + (ap.dy - bp.dy) * (ap.dy - bp.dy);
         if (d2 < connectDist2) {
           final t = 1.0 - (sqrt(d2) / connectDist);
-          linePaint.color = isDark 
-              ? Colors.white.withOpacity(0.06 * t)
-              : const Color(0xFF8A4FFF).withOpacity(0.15 * t);
+          linePaint.color = isDark ? Colors.white.withOpacity(0.06 * t) : const Color(0xFF8A4FFF).withOpacity(0.15 * t);
           canvas.drawLine(ap, bp, linePaint);
         }
       }
     }
-
     final dotPaint = Paint()..style = PaintingStyle.fill;
     for (final p in particles) {
-      final pos = p.pos + parallax * 0.6;
       dotPaint.color = isDark ? Colors.white.withOpacity(0.12) : const Color(0xFF8A4FFF).withOpacity(0.25);
-      canvas.drawCircle(pos, p.radius, dotPaint);
+      canvas.drawCircle(p.pos + parallax * 0.6, p.radius, dotPaint);
     }
-
-    final vignetteColors = isDark
-        ? [Colors.transparent, Colors.black.withOpacity(0.55)]
-        : [Colors.transparent, Colors.white.withOpacity(0.4)];
-        
-    final vignette = Paint()
-      ..shader = RadialGradient(
-        center: Alignment.center,
-        radius: 1.15,
-        colors: vignetteColors,
-        stops: const [0.55, 1.0],
-      ).createShader(rect);
-    canvas.drawRect(rect, vignette);
+    final vignetteColors = isDark ? [Colors.transparent, Colors.black.withOpacity(0.55)] : [Colors.transparent, Colors.white.withOpacity(0.4)];
+    canvas.drawRect(rect, Paint()..shader = RadialGradient(center: Alignment.center, radius: 1.15, colors: vignetteColors, stops: const [0.55, 1.0]).createShader(rect));
   }
-
-  @override
-  bool shouldRepaint(covariant _MeshPainter oldDelegate) => true;
+  @override bool shouldRepaint(covariant _MeshPainter oldDelegate) => true;
 }
