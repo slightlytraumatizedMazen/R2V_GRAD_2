@@ -772,7 +772,7 @@ class _GlassTopBar extends StatelessWidget {
               const Icon(Icons.auto_awesome_rounded, size: 26, color: Color(0xFFBC70FF)),
               const SizedBox(width: 8),
               Text(
-                "R2V Studio",
+                "R2V",
                 style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.w800),
               ),
               const Spacer(),

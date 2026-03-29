@@ -351,7 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
           constraints: BoxConstraints(maxWidth: contentWidth),
           child: Column(
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: 24), // Tweak top padding
               _buildWebTopBar(context, isDark),
               const SizedBox(height: 16),
               Expanded(
@@ -459,44 +459,47 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildWebTopBar(BuildContext context, bool isDark) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.75),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.9)),
-            boxShadow: isDark ? [] : [
-              BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))
-            ],
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.auto_awesome_rounded, size: 26, color: Color(0xFFBC70FF)),
-              const SizedBox(width: 8),
-              Text(
-                "R2V",
-                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.w800),
-              ),
-              const Spacer(),
-              SizedBox(width: 420, child: _buildWebNavTabs(context, isDark)),
-              const SizedBox(width: 16),
-              GestureDetector(
-                onTap: () => Navigator.pushNamed(context, '/profile'),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05), 
-                    shape: BoxShape.circle
-                  ),
-                  child: Icon(Icons.person, color: isDark ? Colors.white : const Color(0xFF1E293B), size: 20),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16), // Outer margin for top bar constraints
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(999),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), // Increased internal padding
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.75),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.9)),
+              boxShadow: isDark ? [] : [
+                BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))
+              ],
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.auto_awesome_rounded, size: 28, color: Color(0xFFBC70FF)),
+                const SizedBox(width: 12), // Increased gap
+                Text(
+                  "R2V",
+                  style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 22, fontWeight: FontWeight.w800),
                 ),
-              ),
-            ],
+                const Spacer(),
+                SizedBox(width: 480, child: _buildWebNavTabs(context, isDark)), // Widened from 420 to 480 to un-squish text
+                const SizedBox(width: 24), // Increased gap before profile
+                GestureDetector(
+                  onTap: () => Navigator.pushNamed(context, '/profile'),
+                  child: Container(
+                    width: 40, // Slightly bigger profile button
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05), 
+                      shape: BoxShape.circle
+                    ),
+                    child: Icon(Icons.person, color: isDark ? Colors.white : const Color(0xFF1E293B), size: 22),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -511,12 +514,12 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, constraints) {
         final totalWidth = constraints.maxWidth;
         final segmentWidth = totalWidth / navCount;
-        const indicatorWidth = 48.0;
+        const indicatorWidth = 56.0; // Slightly wider indicator to match new spacing
         final underlineIndex = (_webHoverNavIndex ?? _webActiveNavIndex).clamp(0, navCount - 1);
         final underlineLeft = underlineIndex * segmentWidth + (segmentWidth - indicatorWidth) / 2;
 
         return SizedBox(
-          height: 34,
+          height: 38, // Slightly taller tabs area
           child: Stack(
             children: [
               Row(
@@ -556,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 bottom: 0,
                 child: Container(
                   width: indicatorWidth,
-                  height: 2,
+                  height: 2.5, // Slightly thicker indicator
                   decoration: BoxDecoration(color: const Color(0xFFBC70FF), borderRadius: BorderRadius.circular(999)),
                 ),
               ),

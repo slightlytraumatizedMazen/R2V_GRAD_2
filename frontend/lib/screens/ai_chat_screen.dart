@@ -376,6 +376,8 @@ class _AIChatScreenState extends State<AIChatScreen> with AutomaticKeepAliveClie
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0C0414) : const Color(0xFFF8FAFC),
+      extendBody: true,
+      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
           // 1. The Interactive Particle Background (Base Layer)
@@ -541,8 +543,8 @@ class _AIChatScreenState extends State<AIChatScreen> with AutomaticKeepAliveClie
       children: [
         AppBar(
           title: Text(
-            _activeConversation.title == "New chat" ? "R2V Studio" : _activeConversation.title,
-            style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w700),
+            _activeConversation.title == "New chat" ? "AI Studio" : _activeConversation.title,
+            style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w800),
           ),
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -745,11 +747,11 @@ class _HeroEmptyState extends StatelessWidget {
                             color: isDark ? Colors.black.withOpacity(0.5) : Colors.white,
                             shape: BoxShape.circle,
                           ),
-                          child: const Text("🥳", style: TextStyle(fontSize: 12)),
+                          child: const Text("🧠", style: TextStyle(fontSize: 12)),
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          "Introducing Magic Components",
+                          "Smart 3D solutions powered by R2V",
                           style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ],
@@ -761,7 +763,7 @@ class _HeroEmptyState extends StatelessWidget {
               
               // Headline
               Text(
-                "Build Stunning 3D Models\neffortlessly",
+                "Build Stunning 3D Models",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: isDark ? Colors.white : const Color(0xFF1E293B),
@@ -975,12 +977,12 @@ class _GlassTopBar extends StatelessWidget {
               const Icon(Icons.auto_awesome_rounded, size: 26, color: Color(0xFFBC70FF)),
               const SizedBox(width: 8),
               Text(
-                "R2V Studio",
+                "R2V",
                 style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.w800),
               ),
               const Spacer(),
               SizedBox(
-                width: 380,
+                width: 420,
                 child: _TopTabs(
                   activeIndex: activeIndex,
                   hoverIndex: hoverIndex,

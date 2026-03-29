@@ -28,15 +28,21 @@ class ProfileScreen extends StatelessWidget {
     final bool isWeb = MediaQuery.of(context).size.width >= 900;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Stack(
-      children: [
-        Positioned.fill(child: ParticleMeshBackground(isDark: isDark)),
-        Positioned.fill(
-          child: isWeb
-              ? _WebProfile(username: username, userId: userId, initialTab: initialTab, isDark: isDark)
-              : _MobileProfile(username: username, userId: userId, initialTab: initialTab, isDark: isDark),
-        ),
-      ],
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0C0414) : const Color(0xFFF8FAFC),
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      body: Stack(
+        children: [
+          Positioned.fill(child: MeshyParticleBackground(isDark: isDark)),
+          Positioned.fill(child: _ReactHeroBackground(isDark: isDark)),
+          Positioned.fill(
+            child: isWeb
+                ? _WebProfile(username: username, userId: userId, initialTab: initialTab, isDark: isDark)
+                : _MobileProfile(username: username, userId: userId, initialTab: initialTab, isDark: isDark),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1123,9 +1129,9 @@ class _MobileProfileState extends State<_MobileProfile> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: isDark ? Colors.black.withOpacity(0.16) : Colors.white.withOpacity(0.6),
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text("Profile", style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w700)),
+        title: Text("Profile", style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w800)),
         iconTheme: IconThemeData(color: isDark ? Colors.white : const Color(0xFF1E293B)),
         actions: [
           IconButton(
@@ -1998,9 +2004,9 @@ class _GlassTopBar extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           decoration: BoxDecoration(
-            color: isDark ? Colors.black.withOpacity(0.35) : Colors.white.withOpacity(0.75),
+            color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.75),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.white),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.9)),
             boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))],
           ),
           child: Row(
@@ -2008,12 +2014,12 @@ class _GlassTopBar extends StatelessWidget {
               const Icon(Icons.auto_awesome_rounded, size: 26, color: Color(0xFFBC70FF)),
               const SizedBox(width: 8),
               Text(
-                "R2V Studio",
-                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.w700),
+                "R2V",
+                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.w800),
               ),
               const Spacer(),
               SizedBox(
-                width: 380,
+                width: 420,
                 child: _TopTabs(
                   activeIndex: activeIndex, hoverIndex: hoverIndex, isDark: isDark,
                   onHover: onHover, onLeave: onLeave, onTap: onNavTap,
@@ -2024,7 +2030,7 @@ class _GlassTopBar extends StatelessWidget {
                 onTap: onProfile,
                 child: Container(
                   width: 36, height: 36,
-                  decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.05), shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05), shape: BoxShape.circle),
                   child: Icon(Icons.person, color: isDark ? Colors.white : const Color(0xFF1E293B), size: 20),
                 ),
               ),
@@ -2284,23 +2290,101 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
   }
 }
 
-class ParticleMeshBackground extends StatelessWidget {
+// ==========================================
+// BACKGROUND LAYERS
+// ==========================================
+
+class _ReactHeroBackground extends StatelessWidget {
   final bool isDark;
-  const ParticleMeshBackground({super.key, required this.isDark});
+  
+  const _ReactHeroBackground({required this.isDark});
 
   @override
-  Widget build(BuildContext context) => RepaintBoundary(child: _ParticleMeshCore(isDark: isDark));
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: 90, sigmaY: 90),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -150,
+              right: -50,
+              child: Transform.rotate(
+                angle: -0.35,
+                child: Row(
+                  children: [
+                    _GradientBlob(isDark: isDark),
+                    const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark),
+                    const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: -50,
+              right: -150,
+              child: Transform.rotate(
+                angle: -0.35, 
+                child: Row(
+                  children: [
+                    _GradientBlob(isDark: isDark),
+                    const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _ParticleMeshCore extends StatefulWidget {
+class _GradientBlob extends StatelessWidget {
   final bool isDark;
-  const _ParticleMeshCore({required this.isDark});
+  const _GradientBlob({required this.isDark});
 
   @override
-  State<_ParticleMeshCore> createState() => _ParticleMeshCoreState();
+  Widget build(BuildContext context) {
+    return Transform(
+      transform: Matrix4.skewY(-0.7),
+      child: Container(
+        width: 140,
+        height: 400,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark 
+                ? [Colors.white.withOpacity(0.15), Colors.blue.shade300.withOpacity(0.35)]
+                : [const Color(0xFFBC70FF).withOpacity(0.25), const Color(0xFF4895EF).withOpacity(0.25)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _ParticleMeshCoreState extends State<_ParticleMeshCore> with SingleTickerProviderStateMixin {
+class MeshyParticleBackground extends StatelessWidget {
+  final bool isDark;
+  const MeshyParticleBackground({super.key, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) => RepaintBoundary(child: _MeshyBgCore(isDark: isDark));
+}
+
+class _MeshyBgCore extends StatefulWidget {
+  final bool isDark;
+  const _MeshyBgCore({required this.isDark});
+
+  @override
+  State<_MeshyBgCore> createState() => _MeshyBgCoreState();
+}
+
+class _MeshyBgCoreState extends State<_MeshyBgCore> with SingleTickerProviderStateMixin {
   late final Ticker _ticker;
   final Random _rng = Random(42);
 

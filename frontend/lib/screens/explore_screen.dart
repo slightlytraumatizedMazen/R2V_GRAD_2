@@ -83,13 +83,19 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final bool isWeb = MediaQuery.of(context).size.width >= 900;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Stack(
-      children: [
-        Positioned.fill(child: MeshyParticleBackground(isDark: isDark)),
-        Positioned.fill(
-          child: isWeb ? _buildWebMarketplace(context, isDark) : _buildMobileMarketplace(context, isDark),
-        ),
-      ],
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0C0414) : const Color(0xFFF8FAFC),
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      body: Stack(
+        children: [
+          Positioned.fill(child: MeshyParticleBackground(isDark: isDark)),
+          Positioned.fill(child: _ReactHeroBackground(isDark: isDark)),
+          Positioned.fill(
+            child: isWeb ? _buildWebMarketplace(context, isDark) : _buildMobileMarketplace(context, isDark),
+          ),
+        ],
+      ),
     );
   }
 
@@ -101,9 +107,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final double w = MediaQuery.of(context).size.width;
     final double contentWidth = w > 1180 ? 1180 : w;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Center(
+    return SafeArea(
+      child: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: contentWidth),
           child: Column(
@@ -271,7 +276,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text("Marketplace", style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF1E293B))),
+        title: Text("Marketplace", style: TextStyle(fontWeight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF1E293B))),
         iconTheme: IconThemeData(color: isDark ? Colors.white : const Color(0xFF1E293B)),
       ),
       body: SingleChildScrollView(
@@ -389,9 +394,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           decoration: BoxDecoration(
-            color: isDark ? Colors.black.withOpacity(0.35) : Colors.white.withOpacity(0.75),
+            color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.75),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.white.withOpacity(0.9)),
+            border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.9)),
             boxShadow: isDark ? [] : [
               BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))
             ],
@@ -402,10 +407,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
               const SizedBox(width: 8),
               Text(
                 "R2V Studio",
-                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.w700),
+                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.w800),
               ),
               const Spacer(),
-              SizedBox(width: 380, child: _buildHomeStyleNavTabs(context, isDark)),
+              SizedBox(width: 420, child: _buildHomeStyleNavTabs(context, isDark)),
               const SizedBox(width: 16),
               GestureDetector(
                 onTap: () => Navigator.pushNamed(context, '/profile'),
@@ -413,7 +418,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.05),
+                    color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(Icons.person, color: isDark ? Colors.white : const Color(0xFF1E293B), size: 20),
@@ -521,16 +526,28 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 32, fontWeight: FontWeight.w800),
                     ),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: () => _openUploadDialog(context, isDark),
-                    icon: const Icon(Icons.cloud_upload_rounded, size: 18),
-                    label: const Text("Upload"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8A4FFF),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: isDark ? 0 : 4,
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF8A4FFF).withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        )
+                      ]
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openUploadDialog(context, isDark),
+                      icon: const Icon(Icons.cloud_upload_rounded, size: 18),
+                      label: const Text("Upload", style: TextStyle(fontWeight: FontWeight.w700)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8A4FFF),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
                     ),
                   ),
                 ],
@@ -556,7 +573,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           child: GestureDetector(
             onTap: () => setState(() => selectedCategory = c),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 gradient: active ? const LinearGradient(colors: [Color(0xFF8A4FFF), Color(0xFFBC70FF)]) : null,
@@ -586,14 +603,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
             child: GestureDetector(
               onTap: () => setState(() => selectedCategory = c),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   gradient: active ? const LinearGradient(colors: [Color(0xFF8A4FFF), Color(0xFFBC70FF)]) : null,
                   color: active ? null : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.04)),
                   border: Border.all(color: active ? Colors.transparent : (isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.05))),
                 ),
-                child: Text(c, style: TextStyle(color: active ? Colors.white : (isDark ? Colors.white : const Color(0xFF1E293B)), fontSize: 12.5)),
+                child: Text(c, style: TextStyle(color: active ? Colors.white : (isDark ? Colors.white : const Color(0xFF1E293B)), fontSize: 12.5, fontWeight: FontWeight.w600)),
               ),
             ),
           );
@@ -604,7 +621,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   Widget _buildSearchBar(bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withOpacity(0.06) : Colors.white.withOpacity(0.8),
         borderRadius: BorderRadius.circular(22),
@@ -622,6 +639,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 border: InputBorder.none,
                 hintText: "Search objects or creators...",
                 hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black38),
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
               ),
               onChanged: (value) => setState(() => _searchQuery = value),
             ),
@@ -757,7 +776,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   Future<void> _openUploadDialog(BuildContext context, bool isDark) async {
     final didUpload = await showDialog<bool>(
       context: context,
-      barrierColor: isDark ? Colors.black.withOpacity(0.65) : Colors.white.withOpacity(0.4),
+      barrierColor: isDark ? Colors.black.withOpacity(0.7) : Colors.black.withOpacity(0.4),
       builder: (_) => _MarketplaceUploadDialog(isDark: isDark),
     );
     if (didUpload == true && mounted) {
@@ -765,6 +784,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 }
+
+// =====================================================================
+// 🚀 Enhanced Marketplace Upload Dialog
+// =====================================================================
 
 class _MarketplaceUploadDialog extends StatefulWidget {
   final bool isDark;
@@ -1003,183 +1026,204 @@ class _MarketplaceUploadDialogState extends State<_MarketplaceUploadDialog> {
   Widget build(BuildContext context) {
     final isDark = widget.isDark;
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(16),
+    return Center(
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(26),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            width: 640,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.black.withOpacity(0.35) : Colors.white.withOpacity(0.95),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: isDark ? Colors.white.withOpacity(0.14) : Colors.white),
-              boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 5))],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        "Upload to Marketplace",
-                        style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w800, fontSize: 16),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () => Navigator.of(context).pop(),
-                      borderRadius: BorderRadius.circular(999),
-                      child: Container(
-                        width: 34,
-                        height: 34,
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Material(
+            color: isDark ? Colors.black.withOpacity(0.55) : Colors.white.withOpacity(0.95),
+            child: Container(
+              width: 720, // Slightly wider for a better 2-column layout feel
+              padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(color: isDark ? Colors.white.withOpacity(0.14) : Colors.white),
+                boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 24, offset: const Offset(0, 8))],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // HEADER
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.10) : Colors.black.withOpacity(0.05),
+                          color: const Color(0xFF8A4FFF).withOpacity(0.15),
                           shape: BoxShape.circle,
-                          border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.transparent),
+                          border: Border.all(color: const Color(0xFF8A4FFF).withOpacity(0.4)),
                         ),
-                        child: Icon(Icons.close, size: 18, color: isDark ? Colors.white70 : Colors.black87),
+                        child: const Icon(Icons.cloud_upload_rounded, color: Color(0xFF8A4FFF), size: 20),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TextField(
-                          controller: _titleController,
-                          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                          decoration: _inputDecoration("Asset title", isDark),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          "Upload to Marketplace",
+                          style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w800, fontSize: 18),
                         ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _priceController,
-                                keyboardType: TextInputType.number,
-                                style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                                decoration: _inputDecoration("Price (EGP)", isDark),
+                      ),
+                      InkWell(
+                        onTap: () => Navigator.of(context).pop(),
+                        borderRadius: BorderRadius.circular(999),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.04),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.transparent),
+                          ),
+                          child: Icon(Icons.close, size: 18, color: isDark ? Colors.white70 : Colors.black87),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // SCROLLABLE FORM
+                  Flexible(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 1. ASSET DETAILS
+                          _sectionTitle("1. Asset Details", Icons.description_rounded, isDark),
+                          const SizedBox(height: 14),
+                          _glassTextField(_titleController, isDark, hint: "Asset Title"),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _glassTextField(_priceController, isDark, hint: "Price (EGP)", isNumber: true),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _dropdownField(
-                                label: "Category",
-                                value: _category,
-                                isDark: isDark,
-                                options: const [
-                                  "Characters",
-                                  "Objects",
-                                  "Vehicles",
-                                  "Environments",
-                                  "Stylized",
-                                  "Realistic",
-                                ],
-                                onChanged: (value) => setState(() => _category = value ?? _category),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _glassDropdown(
+                                  value: _category,
+                                  options: const ["Characters", "Objects", "Vehicles", "Environments", "Stylized", "Realistic"],
+                                  onChanged: (v) => setState(() => _category = v ?? _category),
+                                  isDark: isDark,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        _dropdownField(
-                          label: "Style",
-                          value: _style,
-                          isDark: isDark,
-                          options: const ["Realistic", "Stylized", "CGI", "Low Poly"],
-                          onChanged: (value) => setState(() => _style = value ?? _style),
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: _descriptionController,
-                          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                          maxLines: 3,
-                          decoration: _inputDecoration("Description", isDark),
-                        ),
-                        const SizedBox(height: 14),
-                        _sectionTitle("Model Upload", isDark),
-                        const SizedBox(height: 8),
-                        _uploadRow(
-                          label: _modelName ?? "Upload a 3D model (.glb, .gltf, .obj)",
-                          onPressed: _pickModel,
-                          isDark: isDark,
-                        ),
-                        const SizedBox(height: 14),
-                        _sectionTitle("Thumbnail", isDark),
-                        const SizedBox(height: 8),
-                        Text(
-                          _canCaptureThumbnail
-                              ? "Rotate the 3D model and capture the view you want for your marketplace thumbnail."
-                              : "Capture isn't available on this platform. Upload an image thumbnail instead.",
-                          style: TextStyle(color: isDark ? Colors.white.withOpacity(0.7) : Colors.black54, fontSize: 12.5),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _uploadRow(
-                                label: _thumbnailName ?? "Upload an image thumbnail",
-                                onPressed: _pickThumbnail,
-                                isDark: isDark,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _glassDropdown(
+                                  value: _style,
+                                  options: const ["Realistic", "Stylized", "CGI", "Low Poly"],
+                                  onChanged: (v) => setState(() => _style = v ?? _style),
+                                  isDark: isDark,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            ElevatedButton(
-                              onPressed: _canCaptureThumbnail ? _captureThumbnail : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4CC9F0),
-                                foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _glassTextField(_descriptionController, isDark, hint: "Detailed description...", maxLines: 3),
+                          
+                          const SizedBox(height: 28),
+
+                          // 2. MEDIA UPLOAD
+                          _sectionTitle("2. Media Files", Icons.folder_rounded, isDark),
+                          const SizedBox(height: 14),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Model Dropzone
+                              Expanded(
+                                child: _buildDropzone(
+                                  title: "3D Model",
+                                  subtitle: ".glb, .gltf, .obj",
+                                  filename: _modelName,
+                                  icon: Icons.view_in_ar_rounded,
+                                  isDark: isDark,
+                                  onTap: _pickModel,
+                                  isActive: _modelBytes != null,
+                                ),
                               ),
-                              child: const Text("Capture View"),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        _previewCard(isDark),
-                      ],
+                              const SizedBox(width: 16),
+                              // Thumbnail Dropzone
+                              Expanded(
+                                child: _buildDropzone(
+                                  title: "Thumbnail",
+                                  subtitle: ".png, .jpg, .webp",
+                                  filename: _thumbnailName,
+                                  icon: Icons.image_rounded,
+                                  isDark: isDark,
+                                  onTap: _pickThumbnail,
+                                  isActive: _thumbnailBytes != null,
+                                  extraAction: _canCaptureThumbnail && _modelBytes != null
+                                      ? TextButton.icon(
+                                          onPressed: _captureThumbnail,
+                                          icon: const Icon(Icons.camera_alt_rounded, size: 16, color: Color(0xFF4CC9F0)),
+                                          label: const Text("Capture View", style: TextStyle(color: Color(0xFF4CC9F0), fontSize: 12, fontWeight: FontWeight.w700)),
+                                        )
+                                      : null,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // 3. PREVIEW
+                          if (_modelBytes != null || _thumbnailBytes != null) ...[
+                            _sectionTitle("3. Live Preview", Icons.remove_red_eye_rounded, isDark),
+                            const SizedBox(height: 14),
+                            _buildPreviewCard(isDark),
+                          ]
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
+
+                  const SizedBox(height: 24),
+
+                  // FOOTER ACTIONS
+                  Row(
+                    children: [
+                      TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: isDark ? Colors.white : const Color(0xFF1E293B),
-                          side: BorderSide(color: isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.15)),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         ),
-                        child: const Text("Cancel"),
+                        child: Text("Cancel", style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontWeight: FontWeight.w600)),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _isUploading ? null : _submitUpload,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF8A4FFF),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: isDark ? 0 : 4,
+                      const Spacer(),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF8A4FFF).withOpacity(0.4),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            )
+                          ],
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF8A4FFF), Color(0xFFBC70FF)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
                         ),
-                        child: Text(_isUploading ? "Uploading..." : "Post Asset"),
+                        child: ElevatedButton(
+                          onPressed: _isUploading ? null : _submitUpload,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                          child: _isUploading
+                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                              : const Text("Publish Asset", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1187,190 +1231,234 @@ class _MarketplaceUploadDialogState extends State<_MarketplaceUploadDialog> {
     );
   }
 
-  Widget _previewCard(bool isDark) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.03),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.05)),
+  Widget _sectionTitle(String title, IconData icon, bool isDark) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: isDark ? Colors.white54 : Colors.black45),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: TextStyle(color: isDark ? Colors.white.withOpacity(0.9) : const Color(0xFF1E293B), fontWeight: FontWeight.w700, fontSize: 14.5),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-              child: Row(
-                children: [
-                  Text(
-                    "Preview",
-                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w700),
-                  ),
-                  if (_thumbnailCaptured)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF22C55E).withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: const Text(
-                          "Thumbnail set",
-                          style: TextStyle(color: Color(0xFF22C55E), fontSize: 10.5, fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: AspectRatio(
-                      aspectRatio: 16 / 10,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: Container(
-                          color: isDark ? Colors.black.withOpacity(0.18) : Colors.black.withOpacity(0.05),
-                          child: RepaintBoundary(
-                            key: _viewerKey,
-                            child: _modelDataUrl == null
-                                ? Center(
-                                    child: Text(
-                                      "Model preview",
-                                      style: TextStyle(color: isDark ? Colors.white.withOpacity(0.6) : Colors.black54),
-                                    ),
-                                  )
-                                : ModelViewer(
-                                    key: ValueKey(_modelDataUrl),
-                                    id: _viewerDomId,
-                                    src: _modelDataUrl!,
-                                    backgroundColor: Colors.transparent,
-                                    cameraControls: true,
-                                    disableZoom: false,
-                                    autoRotate: false,
-                                    environmentImage: "neutral",
-                                    exposure: 1.0,
-                                    shadowIntensity: 0.8,
-                                    shadowSoftness: 1,
-                                  ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 120,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Thumbnail",
-                          style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontSize: 12),
-                        ),
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            height: 80,
-                            width: 120,
-                            color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.05),
-                            child: _thumbnailBytes == null
-                                ? Center(
-                                    child: Text(
-                                      "No image",
-                                      style: TextStyle(color: isDark ? Colors.white.withOpacity(0.6) : Colors.black38, fontSize: 11),
-                                    ),
-                                  )
-                                : Image.memory(
-                                    _thumbnailBytes!,
-                                    fit: BoxFit.cover,
-                                  ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+      ],
+    );
+  }
+
+  Widget _glassTextField(TextEditingController controller, bool isDark, {required String hint, int maxLines = 1, bool isNumber = false}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.06), width: 1),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+      child: TextField(
+        controller: controller,
+        maxLines: maxLines,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 13.5),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black38, fontSize: 13.5),
+          border: InputBorder.none,
         ),
       ),
     );
   }
 
-  InputDecoration _inputDecoration(String hint, bool isDark) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(color: isDark ? Colors.white.withOpacity(0.6) : Colors.black38),
-      filled: true,
-      fillColor: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.02),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.05)),
+  Widget _glassDropdown({required String value, required List<String> options, required ValueChanged<String?> onChanged, required bool isDark}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.06), width: 1),
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.05)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFF8A4FFF)),
-      ),
-    );
-  }
-
-  Widget _sectionTitle(String text, bool isDark) {
-    return Text(
-      text,
-      style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w700),
-    );
-  }
-
-  Widget _uploadRow({required String label, required VoidCallback onPressed, required bool isDark}) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: const Icon(Icons.upload_file_rounded, size: 18),
-      label: Text(label, overflow: TextOverflow.ellipsis),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: isDark ? Colors.white : const Color(0xFF1E293B),
-        side: BorderSide(color: isDark ? Colors.white.withOpacity(0.18) : Colors.black.withOpacity(0.15)),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-    );
-  }
-
-  Widget _dropdownField({
-    required String label,
-    required String value,
-    required List<String> options,
-    required ValueChanged<String?> onChanged,
-    required bool isDark,
-  }) {
-    return InputDecorator(
-      decoration: _inputDecoration(label, isDark),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
           dropdownColor: isDark ? const Color(0xFF1B1F2E) : Colors.white,
-          iconEnabledColor: isDark ? Colors.white70 : Colors.black54,
-          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-          items: options
-              .map((option) => DropdownMenuItem<String>(
-                    value: option,
-                    child: Text(option),
-                  ))
-              .toList(),
+          iconEnabledColor: isDark ? Colors.white54 : Colors.black38,
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 13.5),
+          isExpanded: true,
+          items: options.map((option) => DropdownMenuItem<String>(value: option, child: Text(option))).toList(),
           onChanged: onChanged,
         ),
+      ),
+    );
+  }
+
+  Widget _buildDropzone({
+    required String title,
+    required String subtitle,
+    required String? filename,
+    required IconData icon,
+    required bool isDark,
+    required VoidCallback onTap,
+    required bool isActive,
+    Widget? extraAction,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          decoration: BoxDecoration(
+            color: isActive 
+                ? (isDark ? const Color(0xFF8A4FFF).withOpacity(0.15) : const Color(0xFF8A4FFF).withOpacity(0.08)) 
+                : (isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02)),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isActive 
+                  ? const Color(0xFF8A4FFF) 
+                  : (isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.08)),
+              width: isActive ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isActive ? Icons.check_circle_rounded : icon, 
+                size: 32, 
+                color: isActive ? const Color(0xFF8A4FFF) : (isDark ? Colors.white54 : Colors.black38)
+              ),
+              const SizedBox(height: 12),
+              Text(
+                isActive ? filename! : title,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isActive ? (isDark ? Colors.white : const Color(0xFF8A4FFF)) : (isDark ? Colors.white.withOpacity(0.85) : Colors.black87),
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              if (!isActive) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 11.5),
+                ),
+              ],
+              if (extraAction != null) ...[
+                const SizedBox(height: 8),
+                extraAction,
+              ]
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPreviewCard(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black.withOpacity(0.25) : Colors.black.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05)),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 3D Model View
+          Expanded(
+            flex: 2,
+            child: AspectRatio(
+              aspectRatio: 16 / 10,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  color: isDark ? Colors.white.withOpacity(0.04) : Colors.white.withOpacity(0.5),
+                  child: RepaintBoundary(
+                    key: _viewerKey,
+                    child: _modelDataUrl == null
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.view_in_ar_rounded, color: isDark ? Colors.white24 : Colors.black12, size: 32),
+                                const SizedBox(height: 8),
+                                Text("No model uploaded", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 12)),
+                              ],
+                            ),
+                          )
+                        : GestureDetector(
+                            // ✅ FIX: Consume drag gestures so the parent SingleChildScrollView doesn't scroll!
+                            onVerticalDragUpdate: (_) {},
+                            onHorizontalDragUpdate: (_) {},
+                            child: ModelViewer(
+                              key: ValueKey(_modelDataUrl),
+                              id: _viewerDomId,
+                              src: _modelDataUrl!,
+                              backgroundColor: Colors.transparent,
+                              cameraControls: true,
+                              disableZoom: false,
+                              autoRotate: false,
+                              environmentImage: "neutral",
+                              exposure: 1.0,
+                              shadowIntensity: 0.8,
+                              shadowSoftness: 1,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Thumbnail View
+          Expanded(
+            flex: 1,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text("Thumbnail", style: TextStyle(color: isDark ? Colors.white70 : Colors.black54, fontSize: 12, fontWeight: FontWeight.w600)),
+                    if (_thumbnailCaptured) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: const Color(0xFF22C55E).withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+                        child: const Text("CAPTURED", style: TextStyle(color: Color(0xFF22C55E), fontSize: 9, fontWeight: FontWeight.w800)),
+                      )
+                    ]
+                  ],
+                ),
+                const SizedBox(height: 8),
+                AspectRatio(
+                  aspectRatio: 1,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      color: isDark ? Colors.white.withOpacity(0.04) : Colors.white.withOpacity(0.5),
+                      child: _thumbnailBytes == null
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.image_rounded, color: isDark ? Colors.white24 : Colors.black12, size: 28),
+                                  const SizedBox(height: 6),
+                                  Text("No image", style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 11)),
+                                ],
+                              ),
+                            )
+                          : Image.memory(_thumbnailBytes!, fit: BoxFit.cover),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2289,8 +2377,83 @@ class MiniBadge extends StatelessWidget {
 }
 
 // =====================================================================
-// ✅ Background (Replaced with MeshyParticleBackground)
+// ✅ Background
 // =====================================================================
+
+class _ReactHeroBackground extends StatelessWidget {
+  final bool isDark;
+  
+  const _ReactHeroBackground({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: 90, sigmaY: 90),
+        child: Stack(
+          children: [
+            // Blobs simulating the skew gradients
+            Positioned(
+              top: -150,
+              right: -50,
+              child: Transform.rotate(
+                angle: -0.35,
+                child: Row(
+                  children: [
+                    _GradientBlob(isDark: isDark),
+                    const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark),
+                    const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: -50,
+              right: -150,
+              child: Transform.rotate(
+                angle: -0.35, 
+                child: Row(
+                  children: [
+                    _GradientBlob(isDark: isDark),
+                    const SizedBox(width: 50),
+                    _GradientBlob(isDark: isDark),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GradientBlob extends StatelessWidget {
+  final bool isDark;
+  const _GradientBlob({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform(
+      transform: Matrix4.skewY(-0.7),
+      child: Container(
+        width: 140,
+        height: 400,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark 
+                ? [Colors.white.withOpacity(0.15), Colors.blue.shade300.withOpacity(0.35)]
+                : [const Color(0xFFBC70FF).withOpacity(0.25), const Color(0xFF4895EF).withOpacity(0.25)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class MeshyParticleBackground extends StatelessWidget {
   final bool isDark;
