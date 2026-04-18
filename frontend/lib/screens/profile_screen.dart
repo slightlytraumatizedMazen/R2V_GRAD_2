@@ -434,7 +434,8 @@ class _WebProfileState extends State<_WebProfile> {
                       case 0: Navigator.pushNamed(context, '/home'); break;
                       case 1: Navigator.pushNamed(context, '/aichat'); break;
                       case 2: Navigator.pushNamed(context, '/explore'); break;
-                      case 3: Navigator.pushNamed(context, '/settings'); break;
+                      case 3: Navigator.pushNamed(context, '/freelance_hub'); break;
+                      case 4: Navigator.pushNamed(context, '/settings'); break;
                     }
                   },
                   onProfile: () {},
@@ -2019,7 +2020,7 @@ class _GlassTopBar extends StatelessWidget {
               ),
               const Spacer(),
               SizedBox(
-                width: 420,
+                width: 520,
                 child: _TopTabs(
                   activeIndex: activeIndex, hoverIndex: hoverIndex, isDark: isDark,
                   onHover: onHover, onLeave: onLeave, onTap: onNavTap,
@@ -2057,7 +2058,7 @@ class _TopTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labels = ["Home", "AI Studio", "Marketplace", "Settings"];
+    final labels = ["Home", "AI Studio", "Marketplace", "Freelance", "Settings"];
     final navCount = labels.length;
 
     return LayoutBuilder(

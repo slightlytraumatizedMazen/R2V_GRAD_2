@@ -1,74 +1,12 @@
 import 'dart:ui';
 import 'dart:math';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import '../api/r2v_api.dart';
+import 'widgets/workspace_chat_pane.dart';
+import 'widgets/workspace_milestones.dart';
 
-class OAuthCallbackScreen extends StatefulWidget {
-  const OAuthCallbackScreen({super.key});
-
-  @override
-  State<OAuthCallbackScreen> createState() => _OAuthCallbackScreenState();
-}
-
-class _OAuthCallbackScreenState extends State<OAuthCallbackScreen> {
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _handleCallback();
-  }
-
-  Future<void> _handleCallback() async {
-    if (!kIsWeb) {
-      setState(() => _error = 'OAuth callback is only available on web.');
-      return;
-    }
-
-    final uri = Uri.base;
-    final fragment = uri.fragment;
-    final fragmentUri = _parseFragment(fragment);
-
-    final params = {
-      ...uri.queryParameters,
-      ...fragmentUri.queryParameters,
-    };
-
-    final accessToken = params['access_token'];
-    final refreshToken = params['refresh_token'];
-    final error = params['error'];
-    final errorDescription = params['error_description'];
-
-    if (error != null && error.isNotEmpty) {
-      setState(() => _error = errorDescription ?? error);
-      return;
-    }
-
-    if (accessToken == null || refreshToken == null) {
-      setState(() => _error = 'Missing authentication tokens.');
-      return;
-    }
-
-    await r2vApiClient.tokenStore.saveTokens(
-      accessToken: accessToken,
-      refreshToken: refreshToken,
-      persist: true,
-    );
-
-    if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
-  }
-
-  Uri _parseFragment(String fragment) {
-    if (fragment.isEmpty) {
-      return Uri();
-    }
-
-    final normalized = fragment.startsWith('/') ? fragment : '/$fragment';
-    return Uri.parse('https://callback.local$normalized');
-  }
+class FreelanceWorkspaceScreen extends StatelessWidget {
+  const FreelanceWorkspaceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -80,64 +18,81 @@ class _OAuthCallbackScreenState extends State<OAuthCallbackScreen> {
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
+          // Background Layers
           Positioned.fill(child: MeshyParticleBackground(isDark: isDark)),
           Positioned.fill(child: _ReactHeroBackground(isDark: isDark)),
+          
+          // Foreground Content
           Positioned.fill(
-            child: Center(
-              child: _error == null
-                  ? CircularProgressIndicator(color: isDark ? Colors.white : const Color(0xFF8A4FFF))
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.black.withOpacity(0.35) : Colors.white.withOpacity(0.85),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: isDark ? Colors.white.withOpacity(0.14) : Colors.white),
-                            boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 5))],
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.error_outline, color: Color(0xFFF72585), size: 54),
-                              const SizedBox(height: 16),
-                              Text(
-                                "Authentication Error",
-                                style: TextStyle(
-                                  color: isDark ? Colors.white : const Color(0xFF1E293B),
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800,
-                                ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Graceful degradation for non-desktop sizes
+                if (constraints.maxWidth < 1000) {
+                  return Column(
+                    children: [
+                      // Glassmorphic header for mobile fallback
+                      ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.black.withOpacity(0.35) : Colors.white.withOpacity(0.85),
+                              border: Border(bottom: BorderSide(color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.05))),
+                            ),
+                            child: SafeArea(
+                              bottom: false,
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : const Color(0xFF1E293B)),
+                                    onPressed: () => Navigator.pop(context),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "Workspace",
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      fontFamily: 'Inter',
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                _error!,
-                                style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 14.5),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 28),
-                              ElevatedButton(
-                                onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                                  context,
-                                  '/signin',
-                                  (_) => false,
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF8A4FFF),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  elevation: isDark ? 0 : 4,
-                                ),
-                                child: const Text('Back to Sign In', style: TextStyle(fontWeight: FontWeight.w700)),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
+                      // Only render Chat on Mobile/Tablet for now
+                      const Expanded(child: WorkspaceChatPane()),
+                    ],
+                  );
+                }
+
+                // Full 2-Column Desktop Layout
+                return Row(
+                  children: [
+                    // Column 1: Chat Pane (60%)
+                    const Expanded(
+                      flex: 60,
+                      child: WorkspaceChatPane(),
                     ),
+
+                    VerticalDivider(width: 1, thickness: 1, color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05)),
+
+                    // Column 2: Milestones & Tracker (40%)
+                    const Expanded(
+                      flex: 40,
+                      child: WorkspaceMilestones(),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],

@@ -76,7 +76,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             const SizedBox(height: 20),
             _GlassTopBar(
-              activeIndex: 3,
+              activeIndex: 4, // ✅ Settings is now the 5th tab (index 4)
               hoverIndex: null,
               isDark: isDark,
               onHover: (_) {},
@@ -86,7 +86,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   case 0: Navigator.pushNamed(context, '/home'); break;
                   case 1: Navigator.pushNamed(context, '/aichat'); break;
                   case 2: Navigator.pushNamed(context, '/explore'); break;
-                  case 3: break;
+                  case 3: Navigator.pushNamed(context, '/freelance_hub'); break; // ✅ Added Freelance
+                  case 4: break; // Already in Settings
                 }
               },
               onProfile: () => Navigator.pushNamed(context, '/profile'),
@@ -772,12 +773,12 @@ class _GlassTopBar extends StatelessWidget {
               const Icon(Icons.auto_awesome_rounded, size: 26, color: Color(0xFFBC70FF)),
               const SizedBox(width: 8),
               Text(
-                "R2V",
+                "R2V SETTINGS",
                 style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.w800),
               ),
               const Spacer(),
               SizedBox(
-                width: 380,
+                width: 520, // ✅ Expanded from 380 to 520
                 child: _TopTabs(
                   activeIndex: activeIndex,
                   hoverIndex: hoverIndex,
@@ -827,7 +828,8 @@ class _TopTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labels = ["Home", "AI Studio", "Marketplace", "Settings"];
+    // ✅ Added Freelance
+    final labels = ["Home", "AI Studio", "Marketplace", "Freelance", "Settings"];
     final navCount = labels.length;
 
     return LayoutBuilder(

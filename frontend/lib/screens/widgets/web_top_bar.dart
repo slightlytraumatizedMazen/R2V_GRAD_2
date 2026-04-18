@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class WebTopBar extends StatefulWidget {
   /// activeIndex:
-  /// 0 = Home, 1 = AI Studio, 2 = Marketplace, 3 = Settings
+  /// 0 = Home, 1 = AI Studio, 2 = Marketplace, 3 = Freelance, 4 = Settings
   final int activeIndex;
 
   /// Optional avatar image
@@ -25,7 +25,8 @@ class _WebTopBarState extends State<WebTopBar> {
 
   @override
   Widget build(BuildContext context) {
-    final tabs = ["Home", "AI Studio", "Marketplace", "Settings"];
+    // ✅ Added Freelance
+    final tabs = ["Home", "AI Studio", "Marketplace", "Freelance", "Settings"];
 
     return ClipRRect(
       child: BackdropFilter(
@@ -40,8 +41,7 @@ class _WebTopBarState extends State<WebTopBar> {
           child: Row(
             children: [
               // LOGO
-              const Icon(Icons.auto_awesome_rounded,
-                  size: 26, color: Color(0xFFBC70FF)),
+              const Icon(Icons.auto_awesome_rounded, size: 26, color: Color(0xFFBC70FF)),
               const SizedBox(width: 8),
 
               const Text(
@@ -57,7 +57,7 @@ class _WebTopBarState extends State<WebTopBar> {
 
               // NAVIGATION TABS WITH UNDERLINE
               SizedBox(
-                width: 400,
+                width: 520, // ✅ Expanded from 400 to 520
                 height: 38,
                 child: _navTabs(tabs),
               ),
@@ -90,16 +90,14 @@ class _WebTopBarState extends State<WebTopBar> {
 
         final active = hoverIndex ?? widget.activeIndex;
 
-        final underlineLeft =
-            active * segmentWidth + (segmentWidth - underlineWidth) / 2;
+        final underlineLeft = active * segmentWidth + (segmentWidth - underlineWidth) / 2;
 
         return Stack(
           children: [
             // Tab labels
             Row(
               children: List.generate(tabs.length, (i) {
-                final bool highlight =
-                    (hoverIndex == i) || (widget.activeIndex == i);
+                final bool highlight = (hoverIndex == i) || (widget.activeIndex == i);
 
                 return MouseRegion(
                   onEnter: (_) => setState(() => hoverIndex = i),
@@ -113,11 +111,8 @@ class _WebTopBarState extends State<WebTopBar> {
                         child: AnimatedDefaultTextStyle(
                           duration: const Duration(milliseconds: 130),
                           style: TextStyle(
-                            color: highlight
-                                ? Colors.white
-                                : Colors.white.withOpacity(0.7),
-                            fontWeight:
-                                highlight ? FontWeight.w600 : FontWeight.w400,
+                            color: highlight ? Colors.white : Colors.white.withOpacity(0.7),
+                            fontWeight: highlight ? FontWeight.w600 : FontWeight.w400,
                             fontSize: 13.5,
                           ),
                           child: Text(tabs[i]),
@@ -163,8 +158,7 @@ class _WebTopBarState extends State<WebTopBar> {
           color: Colors.white.withOpacity(0.10),
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.notifications_none_rounded,
-            color: Colors.white, size: 20),
+        child: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 20),
       ),
     );
   }
@@ -186,8 +180,7 @@ class _WebTopBarState extends State<WebTopBar> {
               border: Border.all(color: Colors.white.withOpacity(0.4)),
               image: DecorationImage(
                 fit: BoxFit.cover,
-                image: widget.avatar ??
-                    const AssetImage("assets/R2Vlogo.png"),
+                image: widget.avatar ?? const AssetImage("assets/R2Vlogo.png"),
               ),
             ),
           ),
@@ -242,8 +235,7 @@ class _WebTopBarState extends State<WebTopBar> {
           children: [
             Icon(icon, size: 18, color: Colors.white70),
             const SizedBox(width: 10),
-            Text(label,
-                style: const TextStyle(color: Colors.white, fontSize: 13)),
+            Text(label, style: const TextStyle(color: Colors.white, fontSize: 13)),
           ],
         ),
       ),
@@ -266,7 +258,10 @@ class _WebTopBarState extends State<WebTopBar> {
         Navigator.pushReplacementNamed(context, "/explore");
         break;
       case 3:
-        Navigator.pushReplacementNamed(context, "/settings");
+        Navigator.pushReplacementNamed(context, "/freelance_hub"); // ✅ Added Freelance routing
+        break;
+      case 4:
+        Navigator.pushReplacementNamed(context, "/settings"); // ✅ Moved Settings to 4
         break;
     }
   }

@@ -406,11 +406,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
               const Icon(Icons.auto_awesome_rounded, size: 26, color: Color(0xFFBC70FF)),
               const SizedBox(width: 8),
               Text(
-                "R2V Studio",
+                "R2V MARKETPLACE",
                 style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.w800),
               ),
               const Spacer(),
-              SizedBox(width: 420, child: _buildHomeStyleNavTabs(context, isDark)),
+              // ✅ Increased width to 520
+              SizedBox(width: 520, child: _buildHomeStyleNavTabs(context, isDark)),
               const SizedBox(width: 16),
               GestureDetector(
                 onTap: () => Navigator.pushNamed(context, '/profile'),
@@ -432,7 +433,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Widget _buildHomeStyleNavTabs(BuildContext context, bool isDark) {
-    final labels = ["Home", "AI Studio", "Marketplace", "Settings"];
+    // ✅ Added "Freelance" to labels
+    final labels = ["Home", "AI Studio", "Marketplace", "Freelance", "Settings"];
     final navCount = labels.length;
 
     return LayoutBuilder(
@@ -464,8 +466,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         switch (index) {
                           case 0: Navigator.pushNamed(context, '/home'); break;
                           case 1: Navigator.pushNamed(context, '/aichat'); break;
-                          case 2: break;
-                          case 3: Navigator.pushNamed(context, '/settings'); break;
+                          case 2: break; // Already in Explore/Marketplace
+                          case 3: Navigator.pushNamed(context, '/freelance_hub'); break; // ✅ Added routing
+                          case 4: Navigator.pushNamed(context, '/settings'); break;
                         }
                       },
                       child: SizedBox(
@@ -498,7 +501,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       },
     );
   }
-
+  
   Widget _buildMarketHeaderWithCgi(BuildContext context, bool isDark) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(26),

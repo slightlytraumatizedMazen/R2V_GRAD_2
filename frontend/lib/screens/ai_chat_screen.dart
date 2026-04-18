@@ -415,7 +415,8 @@ class _AIChatScreenState extends State<AIChatScreen> with AutomaticKeepAliveClie
                 case 0: Navigator.pushNamed(context, '/home'); break;
                 case 1: break; 
                 case 2: Navigator.pushNamed(context, '/explore'); break;
-                case 3: Navigator.pushNamed(context, '/settings'); break;
+                case 3: Navigator.pushNamed(context, '/freelance_hub'); break;
+                case 4: Navigator.pushNamed(context, '/settings'); break;
               }
             },
             onProfile: () => Navigator.pushNamed(context, '/profile'),
@@ -977,7 +978,7 @@ class _GlassTopBar extends StatelessWidget {
               const Icon(Icons.auto_awesome_rounded, size: 26, color: Color(0xFFBC70FF)),
               const SizedBox(width: 8),
               Text(
-                "R2V",
+                "R2V STUDIO",
                 style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.w800),
               ),
               const Spacer(),
@@ -1032,7 +1033,7 @@ class _TopTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labels = ["Home", "AI Studio", "Marketplace", "Settings"];
+    final labels = ["Home", "AI Studio", "Marketplace", "Freelance", "Settings"];
     final navCount = labels.length;
 
     return LayoutBuilder(

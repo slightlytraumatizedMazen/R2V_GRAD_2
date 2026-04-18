@@ -19,9 +19,11 @@ import 'screens/photo_scan_guided.dart';
 import 'screens/settings_screen.dart';
 import 'screens/explore_screen.dart';
 import 'screens/profile_screen.dart';
-import 'screens/analysis_screen.dart'; // ✅ ADDED
+import 'screens/analysis_screen.dart'; 
 import 'payments/payment_screen.dart';
 import 'api/marketplace_service.dart';
+import 'screens/freelance_hub_screen.dart';
+import 'screens/freelance_workspace.dart';
 
 // ✅ GLOBAL THEME NOTIFIER
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.dark);
@@ -164,9 +166,18 @@ class R2VApp extends StatelessWidget {
               case '/explore':
                 page = const ExploreScreen();
                 break;
-              case '/analysis': // ✅ ADDED ANALYSIS ROUTE
+              case '/analysis':
                 page = const AnalysisScreen();
                 break;
+                
+              // ✅ ADDED FREELANCE ROUTES
+              case '/freelance_hub':
+                page = const FreelanceHubScreen();
+                break;
+              case '/freelance_workspace':
+                page = const FreelanceWorkspaceScreen();
+                break;
+
               case '/profile':
                 final args = settings.arguments;
                 String? userId;
@@ -207,7 +218,6 @@ class R2VApp extends StatelessWidget {
                 );
               }
               break;
-
 
               default:
                 return null;
