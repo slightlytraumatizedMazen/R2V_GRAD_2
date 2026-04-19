@@ -85,6 +85,7 @@ flutter:
     - assets/usecases/interior.png
     - assets/usecase_previews/
     - assets/models/
+    - assets/models/Ankit.glb
     - assets/posters/
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

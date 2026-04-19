@@ -127,11 +127,11 @@ class _CreatorOrderManagementDashboardState extends State<CreatorOrderManagement
               child: isWeb 
                   ? Row(
                       children: [
-                        _buildMetricCard(title: "TOTAL ORDERS", value: "42", icon: Icons.shopping_cart_outlined, iconColor: const Color(0xFFBC70FF), isDark: isDark),
+                        Expanded(child: _buildMetricCard(title: "TOTAL ORDERS", value: "42", icon: Icons.shopping_cart_outlined, iconColor: const Color(0xFFBC70FF), isDark: isDark)),
                         const SizedBox(width: 20),
-                        _buildMetricCard(title: "ACTIVE PROJECTS", value: "07", icon: Icons.rocket_launch_rounded, iconColor: const Color(0xFF4CC9F0), isDark: isDark),
+                        Expanded(child: _buildMetricCard(title: "ACTIVE PROJECTS", value: "07", icon: Icons.rocket_launch_rounded, iconColor: const Color(0xFF4CC9F0), isDark: isDark)),
                         const SizedBox(width: 20),
-                        _buildMetricCard(title: "COMPLETED MILESTONES", value: "128", icon: Icons.check_circle_outline_rounded, iconColor: const Color(0xFFF72585), isDark: isDark),
+                        Expanded(child: _buildMetricCard(title: "COMPLETED MILESTONES", value: "128", icon: Icons.check_circle_outline_rounded, iconColor: const Color(0xFFF72585), isDark: isDark)),
                       ],
                     )
                   : Column(
@@ -174,31 +174,28 @@ class _CreatorOrderManagementDashboardState extends State<CreatorOrderManagement
   // --- COMPONENTS ---
 
   Widget _buildMetricCard({required String title, required String value, required IconData icon, required Color iconColor, required bool isDark}) {
-    return Expanded(
-      flex: 1, // Will only matter inside a Row
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-        decoration: _glassDecoration(isDark),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: iconColor.withOpacity(0.15), borderRadius: BorderRadius.circular(16)),
-              child: Icon(icon, color: iconColor, size: 24),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      decoration: _glassDecoration(isDark),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: iconColor.withOpacity(0.15), borderRadius: BorderRadius.circular(16)),
+            child: Icon(icon, color: iconColor, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: TextStyle(fontFamily: 'Inter', color: isDark ? Colors.white60 : Colors.black45, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.5), maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 4),
+                Text(value, style: TextStyle(fontFamily: 'Inter', color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 28, fontWeight: FontWeight.w800)),
+              ],
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: TextStyle(fontFamily: 'Inter', color: isDark ? Colors.white60 : Colors.black45, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.5), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 4),
-                  Text(value, style: TextStyle(fontFamily: 'Inter', color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 28, fontWeight: FontWeight.w800)),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

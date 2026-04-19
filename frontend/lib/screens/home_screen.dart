@@ -35,6 +35,16 @@ class MarketModel {
   });
 }
 
+class HeroModel {
+  final String src;
+  final String prompt;
+
+  const HeroModel({
+    required this.src,
+    required this.prompt,
+  });
+}
+
 class HomeScreen extends StatefulWidget {
   final String username;
 
@@ -64,6 +74,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _loadingSummary = false;
   String _displayName = '';
+
+  final List<HeroModel> _heroModels = const [
+    HeroModel(
+      src: "assets/models/Ankit.glb",
+      prompt: "A futuristic humanoid character with clean proportions and a premium showcase look.",
+    ),
+    HeroModel(
+      src: "assets/models/StarBucks.glb",
+      prompt: "Starbucks cup with logo, soft studio lighting.",
+    ),
+    HeroModel(
+      src: "assets/models/GOLD KART.glb",
+      prompt: "A detailed vintage car with polished brass, cinematic studio lighting.",
+    ),
+    HeroModel(
+      src: "assets/models/apple-vision-pro.glb",
+      prompt: "A sleek mixed-reality headset with glossy visor, minimal studio lighting.",
+    ),
+  ];
+
+  late HeroModel _currentHeroModel;
 
   Map<String, dynamic> _continueAI = {
     "title": "Neon sci-fi car in rainy alley",
@@ -194,6 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _currentHeroModel = _heroModels[Random().nextInt(_heroModels.length)];
     _scrollController = ScrollController()..addListener(_onScroll);
     _useCaseScrollController = ScrollController();
     _displayName = widget.username;
@@ -280,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (_lastIsWeb) {
         if (_webActiveNavIndex != 0) return;
       } else {
-        if (_selectedTab != 0) return; 
+        if (_selectedTab != 0) return;
       }
 
       setState(() => _selectedUseCase = (_selectedUseCase + 1) % _useCases.length);
@@ -304,6 +336,23 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  Widget _heroModelViewer({double borderRadius = 20}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: ModelViewer(
+        key: ValueKey(_currentHeroModel.src),
+        src: _currentHeroModel.src,
+        backgroundColor: Colors.transparent,
+        autoRotate: true,
+        autoRotateDelay: 0,
+        rotationPerSecond: "25deg",
+        cameraControls: false,
+        disableZoom: true,
+        environmentImage: "neutral",
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isWeb = MediaQuery.of(context).size.width >= 900;
@@ -316,15 +365,9 @@ class _HomeScreenState extends State<HomeScreen> {
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          // 1. Interactive Particle Background
           Positioned.fill(child: MeshyParticleBackground(isDark: isDark)),
-          
-          // 2. React-style Glowing Blurred Background
           Positioned.fill(child: _ReactHeroBackground(isDark: isDark)),
-
-          // 3. UI
           Positioned.fill(child: isWeb ? _buildWebHome(context, isDark) : _buildMobileHome(context, isDark)),
-          
           if (_activeMarketModel != null)
             Positioned.fill(
               child: _HomeMarketModelPanel(
@@ -338,9 +381,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // =========================
-  // WEB
-  // =========================
   Widget _buildWebHome(BuildContext context, bool isDark) {
     final double w = MediaQuery.of(context).size.width;
     final double contentWidth = w > 1180 ? 1180 : w;
@@ -351,7 +391,7 @@ class _HomeScreenState extends State<HomeScreen> {
           constraints: BoxConstraints(maxWidth: contentWidth),
           child: Column(
             children: [
-              const SizedBox(height: 24), // Tweak top padding
+              const SizedBox(height: 24),
               _buildWebTopBar(context, isDark),
               const SizedBox(height: 16),
               Expanded(
@@ -364,11 +404,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       _buildWebHeroSection(context, isDark),
                       const SizedBox(height: 18),
-
                       _SectionHeader(title: "Your stats", subtitle: "Quick overview", isDark: isDark),
                       const SizedBox(height: 12),
                       _StatsRow(stats: _stats, isDark: isDark),
-                      
                       const SizedBox(height: 12),
                       Align(
                         alignment: Alignment.centerRight,
@@ -376,13 +414,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           onPressed: () => Navigator.pushNamed(context, '/analysis'),
                           icon: const Icon(Icons.analytics_outlined, color: Color(0xFF4CC9F0)),
                           label: const Text(
-                            "View Full Analysis", 
-                            style: TextStyle(color: Color(0xFF4CC9F0), fontWeight: FontWeight.w700)
+                            "View Full Analysis",
+                            style: TextStyle(color: Color(0xFF4CC9F0), fontWeight: FontWeight.w700),
                           ),
                         ),
                       ),
                       const SizedBox(height: 22),
-
                       _SectionHeader(title: "Continue", subtitle: "Jump back in", isDark: isDark),
                       const SizedBox(height: 12),
                       _ContinueRow(
@@ -391,10 +428,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         isDark: isDark,
                       ),
                       const SizedBox(height: 28),
-
                       _SectionHeader(title: "Use R2V for", subtitle: "Pick a category", isDark: isDark),
                       const SizedBox(height: 12),
-
                       MouseRegion(
                         onEnter: (_) => setState(() => _pauseUseCaseAutoScroll = true),
                         onExit: (_) => setState(() => _pauseUseCaseAutoScroll = false),
@@ -413,9 +448,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 18),
-
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 320),
                         switchInCurve: Curves.easeOut,
@@ -436,15 +469,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           isDark: isDark,
                         ),
                       ),
-
                       const SizedBox(height: 26),
-
                       if (_loadingSummary)
                         Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
                             "Updating…",
-                            style: TextStyle(color: isDark ? Colors.white.withOpacity(0.6) : Colors.black54, fontSize: 12),
+                            style: TextStyle(
+                              color: isDark ? Colors.white.withOpacity(0.6) : Colors.black54,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                     ],
@@ -469,9 +503,9 @@ class _HomeScreenState extends State<HomeScreen> {
             color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.75),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.9)),
-            boxShadow: isDark ? [] : [
-              BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))
-            ],
+            boxShadow: isDark
+                ? []
+                : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))],
           ),
           child: Row(
             children: [
@@ -479,10 +513,13 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 8),
               Text(
                 "R2V",
-                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const Spacer(),
-              // ✅ Increased width to 520 to fit the 5th tab
               SizedBox(width: 520, child: _buildWebNavTabs(context, isDark)),
               const SizedBox(width: 16),
               GestureDetector(
@@ -491,8 +528,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05), 
-                    shape: BoxShape.circle
+                    color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05),
+                    shape: BoxShape.circle,
                   ),
                   child: Icon(Icons.person, color: isDark ? Colors.white : const Color(0xFF1E293B), size: 20),
                 ),
@@ -505,7 +542,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildWebNavTabs(BuildContext context, bool isDark) {
-    // ✅ Added "Freelance" to labels
     final labels = ["Home", "AI Studio", "Marketplace", "Freelance", "Settings"];
     final navCount = labels.length;
 
@@ -535,11 +571,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () {
                         setState(() => _webActiveNavIndex = index);
                         switch (index) {
-                          case 0: break; // Already Home
-                          case 1: Navigator.pushNamed(context, '/aichat'); break;
-                          case 2: Navigator.pushNamed(context, '/explore'); break;
-                          case 3: Navigator.pushNamed(context, '/freelance_hub'); break; // ✅ Added routing
-                          case 4: Navigator.pushNamed(context, '/settings'); break;
+                          case 0:
+                            break;
+                          case 1:
+                            Navigator.pushNamed(context, '/aichat');
+                            break;
+                          case 2:
+                            Navigator.pushNamed(context, '/explore');
+                            break;
+                          case 3:
+                            Navigator.pushNamed(context, '/freelance_hub');
+                            break;
+                          case 4:
+                            Navigator.pushNamed(context, '/settings');
+                            break;
                         }
                       },
                       child: SizedBox(
@@ -560,7 +605,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Container(
                   width: indicatorWidth,
                   height: 2,
-                  decoration: BoxDecoration(color: const Color(0xFFBC70FF), borderRadius: BorderRadius.circular(999)),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFBC70FF),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
               ),
             ],
@@ -569,7 +617,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
-  
+
   Widget _buildWebHeroSection(BuildContext context, bool isDark) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -586,7 +634,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.7),
                   borderRadius: BorderRadius.circular(26),
                   border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.8)),
-                  boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
+                  boxShadow: isDark
+                      ? []
+                      : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -666,16 +716,59 @@ class _HomeScreenState extends State<HomeScreen> {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Container(
+                height: 320,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(26),
                   color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.5),
                   border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white),
-                  boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
+                  boxShadow: isDark
+                      ? []
+                      : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
                 ),
-                child: Text(
-                  "“A neon-lit sci-fi car parked in a rainy alley, cinematic lighting.”\n\nPrompt → 3D preview in under 60s.",
-                  style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 13),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "“${_currentHeroModel.prompt}”",
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : Colors.black87,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "Create 3D models from prompts — in minutes",
+                      style: TextStyle(
+                        color: isDark ? Colors.white.withOpacity(0.65) : Colors.black54,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          gradient: RadialGradient(
+                            center: Alignment.center,
+                            radius: 0.9,
+                            colors: [
+                              const Color(0xFF8A4FFF).withOpacity(0.20),
+                              const Color(0xFF4895EF).withOpacity(0.10),
+                              Colors.transparent,
+                            ],
+                          ),
+                          border: Border.all(
+                            color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+                          ),
+                        ),
+                        child: _heroModelViewer(borderRadius: 20),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -685,9 +778,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // =========================
-  // MOBILE
-  // =========================
   Widget _buildMobileHome(BuildContext context, bool isDark) {
     final double w = MediaQuery.of(context).size.width;
     final double contentWidth = w > 520 ? 520.0 : w;
@@ -770,7 +860,10 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(
               width: 12,
               height: 12,
-              child: CircularProgressIndicator(strokeWidth: 2, color: isDark ? Colors.white.withOpacity(0.8) : const Color(0xFFBC70FF)),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: isDark ? Colors.white.withOpacity(0.8) : const Color(0xFFBC70FF),
+              ),
             ),
           ],
         ],
@@ -784,11 +877,9 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         _buildMobileHeroStack(context, isDark),
         const SizedBox(height: 16),
-
         _SectionHeader(title: "Your stats", subtitle: "Quick overview", isDark: isDark),
         const SizedBox(height: 12),
         _StatsRow(stats: _stats, isDark: isDark),
-
         const SizedBox(height: 12),
         Align(
           alignment: Alignment.centerRight,
@@ -796,13 +887,12 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => Navigator.pushNamed(context, '/analysis'),
             icon: const Icon(Icons.analytics_outlined, color: Color(0xFF4CC9F0)),
             label: const Text(
-              "View Full Analysis", 
-              style: TextStyle(color: Color(0xFF4CC9F0), fontWeight: FontWeight.w700)
+              "View Full Analysis",
+              style: TextStyle(color: Color(0xFF4CC9F0), fontWeight: FontWeight.w700),
             ),
           ),
         ),
         const SizedBox(height: 18),
-
         _SectionHeader(title: "Continue", subtitle: "Jump back in", isDark: isDark),
         const SizedBox(height: 12),
         _ContinueRow(
@@ -812,7 +902,6 @@ class _HomeScreenState extends State<HomeScreen> {
           isDark: isDark,
         ),
         const SizedBox(height: 22),
-
         _SectionHeader(title: "Use R2V for", subtitle: "Pick a category", isDark: isDark),
         const SizedBox(height: 12),
         NotificationListener<ScrollNotification>(
@@ -952,9 +1041,46 @@ class _HomeScreenState extends State<HomeScreen> {
                 border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white),
                 boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))],
               ),
-              child: Text(
-                "“A neon-lit sci-fi car parked in a rainy alley, cinematic lighting.”\n\nPrompt → 3D preview in under 60s.",
-                style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 13),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "“${_currentHeroModel.prompt}”",
+                    style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 13, height: 1.4),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Create 3D models from prompts — in minutes",
+                    style: TextStyle(
+                      color: isDark ? Colors.white.withOpacity(0.65) : Colors.black54,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 220,
+                    width: double.infinity,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        gradient: RadialGradient(
+                          center: Alignment.center,
+                          radius: 0.9,
+                          colors: [
+                            const Color(0xFF8A4FFF).withOpacity(0.20),
+                            const Color(0xFF4895EF).withOpacity(0.10),
+                            Colors.transparent,
+                          ],
+                        ),
+                        border: Border.all(
+                          color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+                        ),
+                      ),
+                      child: _heroModelViewer(borderRadius: 18),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -1073,9 +1199,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// =========================
-// UI Components
-// =========================
 class _SectionHeader extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -1132,19 +1255,27 @@ class _MiniStatCard extends StatelessWidget {
 
   Color _accentFor(String label) {
     switch (label.toLowerCase()) {
-      case "models": return const Color(0xFF8A4FFF);
-      case "scans": return const Color(0xFFF72585);
-      case "downloads": return const Color(0xFF4895EF);
-      default: return const Color(0xFFBC70FF);
+      case "models":
+        return const Color(0xFF8A4FFF);
+      case "scans":
+        return const Color(0xFFF72585);
+      case "downloads":
+        return const Color(0xFF4895EF);
+      default:
+        return const Color(0xFFBC70FF);
     }
   }
 
   IconData _iconFor(String label) {
     switch (label.toLowerCase()) {
-      case "models": return Icons.view_in_ar_rounded;
-      case "scans": return Icons.photo_camera_rounded;
-      case "downloads": return Icons.download_rounded;
-      default: return Icons.insights_rounded;
+      case "models":
+        return Icons.view_in_ar_rounded;
+      case "scans":
+        return Icons.photo_camera_rounded;
+      case "downloads":
+        return Icons.download_rounded;
+      default:
+        return Icons.insights_rounded;
     }
   }
 
@@ -1316,8 +1447,8 @@ class _ContinueCardState extends State<_ContinueCard> {
                 color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.7),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: _hover 
-                      ? (isDark ? Colors.white.withOpacity(0.20) : Colors.black.withOpacity(0.1)) 
+                  color: _hover
+                      ? (isDark ? Colors.white.withOpacity(0.20) : Colors.black.withOpacity(0.1))
                       : (isDark ? Colors.white.withOpacity(0.12) : Colors.white),
                 ),
                 boxShadow: [
@@ -1492,8 +1623,8 @@ class _UseCaseTileState extends State<_UseCaseTile> {
                         gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: baseColors),
                         borderRadius: BorderRadius.circular(22),
                         border: Border.all(
-                          color: widget.isActive 
-                              ? (isDark ? Colors.white.withOpacity(0.28) : Colors.black.withOpacity(0.1)) 
+                          color: widget.isActive
+                              ? (isDark ? Colors.white.withOpacity(0.28) : Colors.black.withOpacity(0.1))
                               : (isDark ? Colors.white.withOpacity(0.12) : Colors.white),
                           width: widget.isActive ? 1.4 : 1,
                         ),
@@ -1501,9 +1632,13 @@ class _UseCaseTileState extends State<_UseCaseTile> {
                           if (widget.isActive && isDark)
                             BoxShadow(blurRadius: 28, color: Colors.white.withOpacity(0.10), offset: const Offset(0, 10)),
                           if (!isDark)
-                             BoxShadow(blurRadius: 15, color: Colors.black.withOpacity(0.04), offset: const Offset(0, 5)),
+                            BoxShadow(blurRadius: 15, color: Colors.black.withOpacity(0.04), offset: const Offset(0, 5)),
                           if (isDark)
-                             BoxShadow(blurRadius: 18, color: Colors.black.withOpacity((_hover || widget.isActive) ? 0.40 : 0.25), offset: const Offset(0, 10)),
+                            BoxShadow(
+                              blurRadius: 18,
+                              color: Colors.black.withOpacity((_hover || widget.isActive) ? 0.40 : 0.25),
+                              offset: const Offset(0, 10),
+                            ),
                         ],
                       ),
                       child: Align(
@@ -1551,17 +1686,25 @@ class _UseCaseTileState extends State<_UseCaseTile> {
 
   List<Color> _gradientFor(String title, bool isDark) {
     final t = title.replaceAll('\n', ' ').toLowerCase();
-    
+
     if (isDark) {
       switch (t) {
-        case 'film production': return [const Color(0xFF9CA3AF).withOpacity(.4), const Color(0xFF111827).withOpacity(.15)];
-        case 'product design': return [const Color(0xFF38BDF8).withOpacity(.4), const Color(0xFF2563EB).withOpacity(.15)];
-        case 'education': return [const Color(0xFFFDE68A).withOpacity(.4), const Color(0xFFB45309).withOpacity(.15)];
-        case 'game development': return [const Color(0xFF22D3EE).withOpacity(.4), const Color(0xFF0EA5E9).withOpacity(.15)];
-        case '3d printing': return [const Color(0xFFA3E635).withOpacity(.4), const Color(0xFF16A34A).withOpacity(.15)];
-        case 'vr/ar': return [const Color(0xFFC084FC).withOpacity(.4), const Color(0xFFFB7185).withOpacity(.15)];
-        case 'interior design': return [const Color(0xFFFCA5A5).withOpacity(.4), const Color(0xFFF59E0B).withOpacity(.15)];
-        default: return [Colors.white.withOpacity(.18), Colors.white.withOpacity(.06)];
+        case 'film production':
+          return [const Color(0xFF9CA3AF).withOpacity(.4), const Color(0xFF111827).withOpacity(.15)];
+        case 'product design':
+          return [const Color(0xFF38BDF8).withOpacity(.4), const Color(0xFF2563EB).withOpacity(.15)];
+        case 'education':
+          return [const Color(0xFFFDE68A).withOpacity(.4), const Color(0xFFB45309).withOpacity(.15)];
+        case 'game development':
+          return [const Color(0xFF22D3EE).withOpacity(.4), const Color(0xFF0EA5E9).withOpacity(.15)];
+        case '3d printing':
+          return [const Color(0xFFA3E635).withOpacity(.4), const Color(0xFF16A34A).withOpacity(.15)];
+        case 'vr/ar':
+          return [const Color(0xFFC084FC).withOpacity(.4), const Color(0xFFFB7185).withOpacity(.15)];
+        case 'interior design':
+          return [const Color(0xFFFCA5A5).withOpacity(.4), const Color(0xFFF59E0B).withOpacity(.15)];
+        default:
+          return [Colors.white.withOpacity(.18), Colors.white.withOpacity(.06)];
       }
     } else {
       return [Colors.white.withOpacity(0.85), Colors.white.withOpacity(0.6)];
@@ -1686,7 +1829,7 @@ class UseCaseDetailsSection extends StatelessWidget {
                                 begin: Alignment.bottomLeft,
                                 end: Alignment.topRight,
                                 colors: [
-                                  isDark ? Colors.black.withOpacity(0.30) : Colors.white.withOpacity(0.5), 
+                                  isDark ? Colors.black.withOpacity(0.30) : Colors.white.withOpacity(0.5),
                                   Colors.transparent
                                 ],
                               ),
@@ -1902,8 +2045,8 @@ class _HomeActionCardState extends State<_HomeActionCard> {
                 color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.7),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: _hover 
-                      ? (isDark ? Colors.white.withOpacity(0.22) : Colors.black.withOpacity(0.1)) 
+                  color: _hover
+                      ? (isDark ? Colors.white.withOpacity(0.22) : Colors.black.withOpacity(0.1))
                       : (isDark ? Colors.white.withOpacity(0.12) : Colors.white),
                   width: _hover ? 1.3 : 1,
                 ),
@@ -2074,15 +2217,19 @@ class _GlassSmallAction extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w900)),
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.w900),
+                      ),
                       const SizedBox(height: 3),
-                      Text(subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: isDark ? Colors.white.withOpacity(0.70) : Colors.black54, fontSize: 12)),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: isDark ? Colors.white.withOpacity(0.70) : Colors.black54, fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
@@ -2350,9 +2497,7 @@ class _GlassBottomNavBar extends StatelessWidget {
                                     child: Icon(
                                       _items[i].icon,
                                       size: 22,
-                                      color: active 
-                                          ? Colors.white 
-                                          : (isDark ? Colors.white.withOpacity(0.70) : Colors.black54),
+                                      color: active ? Colors.white : (isDark ? Colors.white.withOpacity(0.70) : Colors.black54),
                                     ),
                                   ),
                                 ),
@@ -2379,13 +2524,9 @@ class _BottomItem {
   const _BottomItem({required this.icon, required this.semantics});
 }
 
-// ==========================================
-// BACKGROUND LAYERS
-// ==========================================
-
 class _ReactHeroBackground extends StatelessWidget {
   final bool isDark;
-  
+
   const _ReactHeroBackground({required this.isDark});
 
   @override
@@ -2395,7 +2536,6 @@ class _ReactHeroBackground extends StatelessWidget {
         imageFilter: ImageFilter.blur(sigmaX: 90, sigmaY: 90),
         child: Stack(
           children: [
-            // Blobs simulating the skew gradients
             Positioned(
               top: -150,
               right: -50,
@@ -2416,7 +2556,7 @@ class _ReactHeroBackground extends StatelessWidget {
               top: -50,
               right: -150,
               child: Transform.rotate(
-                angle: -0.35, 
+                angle: -0.35,
                 child: Row(
                   children: [
                     _GradientBlob(isDark: isDark),
@@ -2446,7 +2586,7 @@ class _GradientBlob extends StatelessWidget {
         height: 400,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: isDark 
+            colors: isDark
                 ? [Colors.white.withOpacity(0.15), Colors.blue.shade300.withOpacity(0.35)]
                 : [const Color(0xFFBC70FF).withOpacity(0.25), const Color(0xFF4895EF).withOpacity(0.25)],
             begin: Alignment.centerLeft,
@@ -2592,7 +2732,7 @@ class _MeshPainter extends CustomPainter {
   void paint(Canvas canvas, Size _) {
     final rect = Offset.zero & size;
 
-    final bgColors = isDark 
+    final bgColors = isDark
         ? const [Color(0xFF0F1118), Color(0xFF141625), Color(0xFF0B0D14)]
         : const [Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFE2E8F0)];
 
@@ -2618,7 +2758,9 @@ class _MeshPainter extends CustomPainter {
     glowBlob(center + wobble, 280, isDark ? const Color(0xFF8A4FFF) : const Color(0xFFA855F7), isDark ? 0.18 : 0.12);
     glowBlob(
       Offset(size.width * 0.25, size.height * 0.70) + Offset(cos(time * 0.35) * 35, sin(time * 0.32) * 28),
-      240, isDark ? const Color(0xFF4895EF) : const Color(0xFF38BDF8), isDark ? 0.14 : 0.10,
+      240,
+      isDark ? const Color(0xFF4895EF) : const Color(0xFF38BDF8),
+      isDark ? 0.14 : 0.10,
     );
 
     Offset parallax = Offset.zero;
@@ -2649,7 +2791,7 @@ class _MeshPainter extends CustomPainter {
 
         if (d2 < connectDist2) {
           final t = 1.0 - (sqrt(d2) / connectDist);
-          linePaint.color = isDark 
+          linePaint.color = isDark
               ? Colors.white.withOpacity(0.06 * t)
               : const Color(0xFF8A4FFF).withOpacity(0.15 * t);
           canvas.drawLine(ap, bp, linePaint);
@@ -2667,7 +2809,7 @@ class _MeshPainter extends CustomPainter {
     final vignetteColors = isDark
         ? [Colors.transparent, Colors.black.withOpacity(0.55)]
         : [Colors.transparent, Colors.white.withOpacity(0.4)];
-        
+
     final vignette = Paint()
       ..shader = RadialGradient(
         center: Alignment.center,

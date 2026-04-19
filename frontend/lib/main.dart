@@ -25,6 +25,8 @@ import 'api/marketplace_service.dart';
 import 'screens/freelance_hub_screen.dart';
 import 'screens/freelance_workspace.dart';
 
+import 'screens/spline_scan_hero.dart';
+
 // ✅ GLOBAL THEME NOTIFIER
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.dark);
 
@@ -217,6 +219,10 @@ class R2VApp extends StatelessWidget {
                   body: Center(child: Text("Missing payment arguments")),
                 );
               }
+              break;
+
+            case '/spline_test':
+              page = SplineScanHeroScreen();
               break;
 
               default:
