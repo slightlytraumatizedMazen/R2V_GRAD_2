@@ -114,16 +114,13 @@ class _WorkspaceChatPaneState extends State<WorkspaceChatPane> {
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.sizeOf(context).width;
-    final bool isCompact = screenWidth < 720;
-
     return Container(
       color: const Color(0xFF0F0E15),
       child: Column(
         children: [
           // Header
           Container(
-            padding: EdgeInsets.symmetric(horizontal: isCompact ? 16 : 32, vertical: isCompact ? 16 : 24),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(color: Colors.white.withOpacity(0.05)),
@@ -162,32 +159,26 @@ class _WorkspaceChatPaneState extends State<WorkspaceChatPane> {
                     ],
                   ),
                 ),
-                isCompact
-                    ? IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.videocam_outlined, color: Colors.white, size: 20),
-                        tooltip: 'Start Video Meeting',
-                      )
-                    : OutlinedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.videocam_outlined, color: Colors.white, size: 18),
-                        label: const Text(
-                          "Start Video Meeting",
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          side: BorderSide(color: Colors.white.withOpacity(0.15)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                      ),
+                OutlinedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.videocam_outlined, color: Colors.white, size: 18),
+                  label: const Text(
+                    "Start Video Meeting",
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    side: BorderSide(color: Colors.white.withOpacity(0.15)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -196,7 +187,7 @@ class _WorkspaceChatPaneState extends State<WorkspaceChatPane> {
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              padding: EdgeInsets.all(isCompact ? 16 : 32),
+              padding: const EdgeInsets.all(32),
               itemCount: _messages.length + (_isTyping ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index == _messages.length && _isTyping) {
@@ -233,7 +224,7 @@ class _WorkspaceChatPaneState extends State<WorkspaceChatPane> {
 
           // Input Area
           Container(
-            padding: EdgeInsets.fromLTRB(isCompact ? 16 : 32, 16, isCompact ? 16 : 32, isCompact ? 16 : 32),
+            padding: const EdgeInsets.fromLTRB(32, 16, 32, 32),
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(color: Colors.white.withOpacity(0.05)),
@@ -302,7 +293,7 @@ class _WorkspaceChatPaneState extends State<WorkspaceChatPane> {
                 ),
                 const SizedBox(height: 12),
                 Padding(
-                  padding: EdgeInsets.only(left: isCompact ? 0 : 104),
+                  padding: const EdgeInsets.only(left: 104),
                   child: Text(
                     "ACCEPTS: .OBJ, .FBX, .BLEND, .GLTF",
                     style: TextStyle(
@@ -354,7 +345,7 @@ class _WorkspaceChatPaneState extends State<WorkspaceChatPane> {
     return Align(
       alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width < 720 ? MediaQuery.sizeOf(context).width * 0.82 : 500),
+        constraints: const BoxConstraints(maxWidth: 500),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -405,9 +396,8 @@ class _WorkspaceChatPaneState extends State<WorkspaceChatPane> {
   }) {
     return Align(
       alignment: Alignment.centerLeft,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width < 720 ? MediaQuery.sizeOf(context).width * 0.82 : 450),
-        child: Container(
+      child: Container(
+        width: 450,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: const Color(0xFF1E1C2A),
@@ -458,7 +448,6 @@ class _WorkspaceChatPaneState extends State<WorkspaceChatPane> {
             ),
           ],
         ),
-      ),
       ),
     );
   }

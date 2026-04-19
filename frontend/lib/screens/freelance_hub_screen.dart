@@ -118,11 +118,15 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
     Navigator.pushNamed(context, routeName);
   }
 
+  void _goHome() {
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/home');
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final isWeb = MediaQuery.sizeOf(context).width >= 900;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool isWeb = MediaQuery.of(context).size.width >= 900;
 
     return Scaffold(
       backgroundColor:
@@ -142,8 +146,8 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
   }
 
   Widget _buildWebLayout(bool isDark) {
-    final width = MediaQuery.sizeOf(context).width;
-    final contentWidth = width > 1180 ? 1180.0 : width;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double contentWidth = screenWidth > 1180 ? 1180 : screenWidth;
 
     return Center(
       child: ConstrainedBox(
@@ -182,6 +186,20 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
         AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
+          automaticallyImplyLeading: false,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_rounded,
+              color: isDark ? Colors.white : const Color(0xFF1E293B),
+            ),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                _goHome();
+              }
+            },
+          ),
           title: Text(
             'Freelance Hub',
             style: TextStyle(
@@ -189,6 +207,16 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
               color: isDark ? Colors.white : const Color(0xFF1E293B),
             ),
           ),
+          actions: [
+            IconButton(
+              tooltip: 'Home',
+              icon: Icon(
+                Icons.home_rounded,
+                color: isDark ? Colors.white : const Color(0xFF1E293B),
+              ),
+              onPressed: _goHome,
+            ),
+          ],
           iconTheme: IconThemeData(
             color: isDark ? Colors.white : const Color(0xFF1E293B),
           ),
@@ -214,6 +242,7 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
       case FreelanceHubView.orders:
         return const CreatorOrderManagementDashboard(key: ValueKey('orders'));
       case FreelanceHubView.discovery:
+      default:
         return _buildDiscoveryView(isDark, isWeb: isWeb);
     }
   }
@@ -239,8 +268,7 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
                   child: Text(
                     'Trending Specialists',
                     style: TextStyle(
-                      color:
-                          isDark ? Colors.white : const Color(0xFF1E293B),
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
                     ),
@@ -294,13 +322,13 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
                     return GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: discoverArtists.length,
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
                         childAspectRatio: 0.85,
                       ),
+                      itemCount: discoverArtists.length,
                       itemBuilder: (context, index) {
                         return _buildGlassArtistCard(
                           discoverArtists[index],
@@ -328,19 +356,17 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
           padding: EdgeInsets.all(isWeb ? 32 : 20),
           decoration: BoxDecoration(
             color: isDark
-                ? Colors.black.withValues(alpha: 0.20)
-                : Colors.white.withValues(alpha: 0.85),
+                ? Colors.black.withOpacity(0.20)
+                : Colors.white.withOpacity(0.85),
             borderRadius: BorderRadius.circular(26),
             border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.12)
-                  : Colors.white,
+              color: isDark ? Colors.white.withOpacity(0.12) : Colors.white,
             ),
             boxShadow: isDark
-                ? const []
+                ? []
                 : [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: Colors.black.withOpacity(0.04),
                       blurRadius: 15,
                       offset: const Offset(0, 5),
                     ),
@@ -353,10 +379,10 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4CC9F0).withValues(alpha: 0.15),
+                  color: const Color(0xFF4CC9F0).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(
-                    color: const Color(0xFF4CC9F0).withValues(alpha: 0.3),
+                    color: const Color(0xFF4CC9F0).withOpacity(0.3),
                   ),
                 ),
                 child: const Text(
@@ -383,9 +409,7 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
               Text(
                 'Connect with elite environmental architects, sculptors, and animators. Get your assets built professionally and automatically managed in your workspace.',
                 style: TextStyle(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.70)
-                      : Colors.black54,
+                  color: isDark ? Colors.white.withOpacity(0.7) : Colors.black54,
                   fontSize: 14.5,
                   height: 1.4,
                 ),
@@ -397,14 +421,12 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.06)
-                      : Colors.white,
+                  color: isDark ? Colors.white.withOpacity(0.06) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isDark
-                        ? Colors.white.withValues(alpha: 0.15)
-                        : Colors.black.withValues(alpha: 0.05),
+                        ? Colors.white.withOpacity(0.15)
+                        : Colors.black.withOpacity(0.05),
                   ),
                 ),
                 child: Row(
@@ -435,21 +457,19 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    FilledButton(
-                      onPressed: () {},
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF8A4FFF),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8A4FFF),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Text(
                         'Search',
                         style: TextStyle(
+                          color: Colors.white,
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
                         ),
@@ -470,19 +490,17 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
       width: 280,
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.black.withValues(alpha: 0.25)
-            : Colors.white.withValues(alpha: 0.9),
+            ? Colors.black.withOpacity(0.25)
+            : Colors.white.withOpacity(0.90),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.white,
+          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white,
         ),
         boxShadow: isDark
-            ? const []
+            ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
+                  color: Colors.black.withOpacity(0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -517,9 +535,8 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isDark
-                            ? const Color(0xFF1A1B20)
-                            : Colors.white,
+                        color:
+                            isDark ? const Color(0xFF1A1B20) : Colors.white,
                         width: 3,
                       ),
                     ),
@@ -563,7 +580,8 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                    const Icon(Icons.star_rounded,
+                        color: Colors.amber, size: 16),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -581,7 +599,8 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
                       child: Text(
                         'From ${data.startingPrice}',
                         style: TextStyle(
-                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          color:
+                              isDark ? Colors.white : const Color(0xFF1E293B),
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
                         ),
@@ -602,19 +621,17 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
     return Container(
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.black.withValues(alpha: 0.25)
-            : Colors.white.withValues(alpha: 0.9),
+            ? Colors.black.withOpacity(0.25)
+            : Colors.white.withOpacity(0.90),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.white,
+          color: isDark ? Colors.white.withOpacity(0.10) : Colors.white,
         ),
         boxShadow: isDark
-            ? const []
+            ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
+                  color: Colors.black.withOpacity(0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -661,7 +678,8 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
                       child: Text(
                         data.name,
                         style: TextStyle(
-                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          color:
+                              isDark ? Colors.white : const Color(0xFF1E293B),
                           fontWeight: FontWeight.w700,
                         ),
                         maxLines: 1,
@@ -715,7 +733,7 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
                 ),
               ],
             ),
-          ),
+          )
         ],
       ),
     );
@@ -730,19 +748,17 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
           width: 250,
           decoration: BoxDecoration(
             color: isDark
-                ? Colors.black.withValues(alpha: 0.20)
-                : Colors.white.withValues(alpha: 0.85),
+                ? Colors.black.withOpacity(0.20)
+                : Colors.white.withOpacity(0.85),
             borderRadius: BorderRadius.circular(26),
             border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.12)
-                  : Colors.white,
+              color: isDark ? Colors.white.withOpacity(0.12) : Colors.white,
             ),
             boxShadow: isDark
-                ? const []
+                ? []
                 : [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: Colors.black.withOpacity(0.04),
                       blurRadius: 15,
                       offset: const Offset(0, 5),
                     ),
@@ -821,7 +837,7 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
   }
 
   Widget _mobileChip(String label, FreelanceHubView view, bool isDark) {
-    final active = _activeView == view;
+    final bool active = _activeView == view;
 
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -833,14 +849,14 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
             color: active
                 ? const Color(0xFF8A4FFF)
                 : (isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.05)),
+                    ? Colors.white.withOpacity(0.08)
+                    : Colors.black.withOpacity(0.05)),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: active
                   ? Colors.transparent
                   : (isDark
-                      ? Colors.white.withValues(alpha: 0.1)
+                      ? Colors.white.withOpacity(0.1)
                       : Colors.transparent),
             ),
           ),
@@ -871,8 +887,8 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
       decoration: BoxDecoration(
         color: isActive
             ? (isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.04))
+                ? Colors.white.withOpacity(0.08)
+                : Colors.black.withOpacity(0.04))
             : Colors.transparent,
         borderRadius: BorderRadius.circular(16),
       ),
@@ -919,19 +935,19 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           decoration: BoxDecoration(
             color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.white.withValues(alpha: 0.75),
+                ? Colors.white.withOpacity(0.08)
+                : Colors.white.withOpacity(0.75),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: isDark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.white.withValues(alpha: 0.9),
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.white.withOpacity(0.9),
             ),
             boxShadow: isDark
-                ? const []
+                ? []
                 : [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: Colors.black.withOpacity(0.04),
                       blurRadius: 15,
                       offset: const Offset(0, 5),
                     ),
@@ -954,7 +970,10 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
                 ),
               ),
               const Spacer(),
-              SizedBox(width: 520, child: _buildHomeStyleNavTabs(isDark)),
+              SizedBox(
+                width: 520,
+                child: _buildHomeStyleNavTabs(isDark),
+              ),
               const SizedBox(width: 16),
               GestureDetector(
                 onTap: () => _safePushNamed('/profile'),
@@ -963,8 +982,8 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
                   height: 36,
                   decoration: BoxDecoration(
                     color: isDark
-                        ? Colors.white.withValues(alpha: 0.15)
-                        : Colors.black.withValues(alpha: 0.05),
+                        ? Colors.white.withOpacity(0.15)
+                        : Colors.black.withOpacity(0.05),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -982,18 +1001,31 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
   }
 
   Widget _buildHomeStyleNavTabs(bool isDark) {
-    const labels = ['Home', 'AI Studio', 'Marketplace', 'Freelance', 'Settings'];
-    const routes = ['/home', '/aichat', '/explore', null, '/settings'];
-    final navCount = labels.length;
+    const labels = [
+      'Home',
+      'AI Studio',
+      'Marketplace',
+      'Freelance',
+      'Settings',
+    ];
+    const routes = [
+      '/home',
+      '/aichat',
+      '/explore',
+      null,
+      '/settings',
+    ];
+
+    final int navCount = labels.length;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final segmentWidth = constraints.maxWidth / navCount;
-        const indicatorWidth = 48.0;
-        final underlineIndex =
+        final double segmentWidth = constraints.maxWidth / navCount;
+        const double indicatorWidth = 48.0;
+        final int underlineIndex =
             (_webHoverNavIndex ?? _webActiveNavIndex).clamp(0, navCount - 1);
-        final underlineLeft =
-            underlineIndex * segmentWidth + (segmentWidth - indicatorWidth) / 2;
+        final double underlineLeft = underlineIndex * segmentWidth +
+            (segmentWidth - indicatorWidth) / 2;
 
         return SizedBox(
           height: 34,
@@ -1001,9 +1033,9 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
             children: [
               Row(
                 children: List.generate(navCount, (index) {
-                  final isActive = _webActiveNavIndex == index;
-                  final isHover = _webHoverNavIndex == index;
-                  final effectiveActive = isActive || isHover;
+                  final bool isActive = _webActiveNavIndex == index;
+                  final bool isHover = _webHoverNavIndex == index;
+                  final bool effectiveActive = isActive || isHover;
 
                   return MouseRegion(
                     onEnter: (_) {
@@ -1036,7 +1068,7 @@ class _FreelanceHubScreenState extends State<FreelanceHubScreen> {
                                       ? Colors.white
                                       : const Color(0xFF1E293B))
                                   : (isDark
-                                      ? Colors.white.withValues(alpha: 0.7)
+                                      ? Colors.white.withOpacity(0.7)
                                       : Colors.black54),
                               fontWeight: effectiveActive
                                   ? FontWeight.w600
@@ -1128,54 +1160,49 @@ class _AppNetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Image.network(
+      url,
+      fit: fit,
       width: width,
       height: height,
-      color: Colors.transparent,
-      child: Image.network(
-        url,
-        fit: fit,
-        width: width,
-        height: height,
-        filterQuality: FilterQuality.medium,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: width,
-            height: height,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(borderRadius),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF1F2937), Color(0xFF374151)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+      filterQuality: FilterQuality.medium,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(borderRadius),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1F2937), Color(0xFF374151)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.broken_image_outlined,
-              color: Colors.white70,
-              size: 28,
-            ),
-          );
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            width: width,
-            height: height,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(borderRadius),
-              color: Colors.white.withValues(alpha: 0.04),
-            ),
-            child: const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          );
-        },
-      ),
+          ),
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.broken_image_outlined,
+            color: Colors.white70,
+            size: 28,
+          ),
+        );
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          width: width,
+          height: height,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(borderRadius),
+            color: Colors.white.withOpacity(0.04),
+          ),
+          child: const SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        );
+      },
     );
   }
 }
@@ -1245,12 +1272,12 @@ class _GradientBlob extends StatelessWidget {
           gradient: LinearGradient(
             colors: isDark
                 ? [
-                    Colors.white.withValues(alpha: 0.15),
-                    Colors.blue.shade300.withValues(alpha: 0.35),
+                    Colors.white.withOpacity(0.15),
+                    Colors.blue.shade300.withOpacity(0.35),
                   ]
                 : [
-                    const Color(0xFFBC70FF).withValues(alpha: 0.25),
-                    const Color(0xFF4895EF).withValues(alpha: 0.25),
+                    const Color(0xFFBC70FF).withOpacity(0.25),
+                    const Color(0xFF4895EF).withOpacity(0.25),
                   ],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
@@ -1306,7 +1333,7 @@ class _MeshyBgCoreState extends State<_MeshyBgCore>
       if (_size == Size.zero) return;
 
       _time = elapsed.inMilliseconds / 1000.0;
-      const dt = 1 / 60;
+      const double dt = 1 / 60;
 
       for (final p in _particles) {
         p.pos = p.pos + p.vel * dt;
@@ -1340,7 +1367,7 @@ class _MeshyBgCoreState extends State<_MeshyBgCore>
   void _ensureParticles(Size size) {
     if (size == Size.zero) return;
 
-    final area = size.width * size.height;
+    final double area = size.width * size.height;
     int target = (area / 18000).round();
     target = target.clamp(35, 95);
 
@@ -1351,10 +1378,10 @@ class _MeshyBgCoreState extends State<_MeshyBgCore>
         _rng.nextDouble() * size.width,
         _rng.nextDouble() * size.height,
       );
-      final speed = 8 + _rng.nextDouble() * 18;
-      final angle = _rng.nextDouble() * math.pi * 2;
+      final double speed = 8 + _rng.nextDouble() * 18;
+      final double angle = _rng.nextDouble() * math.pi * 2;
       final vel = Offset(math.cos(angle), math.sin(angle)) * speed;
-      final radius = 1.2 + _rng.nextDouble() * 1.9;
+      final double radius = 1.2 + _rng.nextDouble() * 1.9;
 
       return _Particle(pos: pos, vel: vel, radius: radius);
     });
@@ -1365,6 +1392,7 @@ class _MeshyBgCoreState extends State<_MeshyBgCore>
     return LayoutBuilder(
       builder: (context, constraints) {
         final newSize = Size(constraints.maxWidth, constraints.maxHeight);
+
         if (_size != newSize) {
           _size = newSize;
           _ensureParticles(newSize);
@@ -1432,31 +1460,23 @@ class _MeshPainter extends CustomPainter {
   void paint(Canvas canvas, Size _) {
     final rect = Offset.zero & size;
 
-    final bgColors = isDark
-        ? const [
-            Color(0xFF0F1118),
-            Color(0xFF141625),
-            Color(0xFF0B0D14),
-          ]
-        : const [
-            Color(0xFFF8FAFC),
-            Color(0xFFF1F5F9),
-            Color(0xFFE2E8F0),
-          ];
+    final List<Color> bgColors = isDark
+        ? const [Color(0xFF0F1118), Color(0xFF141625), Color(0xFF0B0D14)]
+        : const [Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFE2E8F0)];
 
     final bg = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: bgColors,
-        stops: [0.0, 0.55, 1.0],
+        stops: const [0.0, 0.55, 1.0],
       ).createShader(rect);
 
     canvas.drawRect(rect, bg);
 
     void glowBlob(Offset center, double radius, Color color, double opacity) {
       final paint = Paint()
-        ..color = color.withValues(alpha: opacity)
+        ..color = color.withOpacity(opacity)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 90);
       canvas.drawCircle(center, radius, paint);
     }
@@ -1492,8 +1512,8 @@ class _MeshPainter extends CustomPainter {
       parallax = Offset(dx, dy);
     }
 
-    final connectDist = math.min(size.width, size.height) * 0.15;
-    final connectDist2 = connectDist * connectDist;
+    final double connectDist = math.min(size.width, size.height) * 0.15;
+    final double connectDist2 = connectDist * connectDist;
 
     final linePaint = Paint()
       ..style = PaintingStyle.stroke
@@ -1514,8 +1534,8 @@ class _MeshPainter extends CustomPainter {
         if (d2 < connectDist2) {
           final t = 1.0 - (math.sqrt(d2) / connectDist);
           linePaint.color = isDark
-              ? Colors.white.withValues(alpha: 0.06 * t)
-              : const Color(0xFF8A4FFF).withValues(alpha: 0.15 * t);
+              ? Colors.white.withOpacity(0.06 * t)
+              : const Color(0xFF8A4FFF).withOpacity(0.15 * t);
           canvas.drawLine(ap, bp, linePaint);
         }
       }
@@ -1525,14 +1545,14 @@ class _MeshPainter extends CustomPainter {
     for (final particle in particles) {
       final pos = particle.pos + parallax * 0.6;
       dotPaint.color = isDark
-          ? Colors.white.withValues(alpha: 0.12)
-          : const Color(0xFF8A4FFF).withValues(alpha: 0.25);
+          ? Colors.white.withOpacity(0.12)
+          : const Color(0xFF8A4FFF).withOpacity(0.25);
       canvas.drawCircle(pos, particle.radius, dotPaint);
     }
 
-    final vignetteColors = isDark
-        ? [Colors.transparent, Colors.black.withValues(alpha: 0.55)]
-        : [Colors.transparent, Colors.white.withValues(alpha: 0.4)];
+    final List<Color> vignetteColors = isDark
+        ? [Colors.transparent, Colors.black.withOpacity(0.55)]
+        : [Colors.transparent, Colors.white.withOpacity(0.4)];
 
     final vignette = Paint()
       ..shader = RadialGradient(

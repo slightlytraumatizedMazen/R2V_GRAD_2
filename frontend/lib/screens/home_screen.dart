@@ -779,57 +779,62 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMobileHome(BuildContext context, bool isDark) {
-    final double w = MediaQuery.of(context).size.width;
-    final double contentWidth = w > 520 ? 520.0 : w;
+  final double w = MediaQuery.of(context).size.width;
+  final double contentWidth = w > 520 ? 520.0 : w;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBody: true,
-      extendBodyBehindAppBar: true,
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(_collapsed ? 56 : 70),
-        child: SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 14, right: 14, top: 10),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: _buildMobileTopPill(context, isDark),
+  return Scaffold(
+    backgroundColor: Colors.transparent,
+    extendBody: true,
+    extendBodyBehindAppBar: true,
+    appBar: PreferredSize(
+      preferredSize: Size.fromHeight(_collapsed ? 56 : 70),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 14, right: 14, top: 10),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: _buildMobileTopPill(context, isDark),
+          ),
+        ),
+      ),
+    ),
+    bottomNavigationBar: _GlassBottomNavBar(
+      currentIndex: _selectedTab,
+      onTap: (i) {
+        if (i == 4) {
+          Navigator.pushNamed(context, '/freelance_hub');
+          return;
+        }
+        setState(() => _selectedTab = i);
+      },
+      isDark: isDark,
+    ),
+    body: Padding(
+      padding: EdgeInsets.fromLTRB(16, (_collapsed ? 86 : 104), 16, 96),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: contentWidth),
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_selectedTab == 0) _buildHomeTabMobile(context, isDark),
+                if (_selectedTab == 1) _buildAiTabMobile(context, isDark),
+                if (_selectedTab == 2) _buildScanTabMobile(context, isDark),
+                if (_selectedTab == 3) _buildMarketTabMobile(context, isDark),
+                if (_selectedTab == 5) _buildProfileTabMobile(context, isDark),
+                const SizedBox(height: 24),
+              ],
             ),
           ),
         ),
       ),
-      bottomNavigationBar: _GlassBottomNavBar(
-        currentIndex: _selectedTab,
-        onTap: (i) => setState(() => _selectedTab = i),
-        isDark: isDark,
-      ),
-      body: Padding(
-        padding: EdgeInsets.fromLTRB(16, (_collapsed ? 86 : 104), 16, 96),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: contentWidth),
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_selectedTab == 0) _buildHomeTabMobile(context, isDark),
-                  if (_selectedTab == 1) _buildAiTabMobile(context, isDark),
-                  if (_selectedTab == 2) _buildScanTabMobile(context, isDark),
-                  if (_selectedTab == 3) _buildMarketTabMobile(context, isDark),
-                  if (_selectedTab == 4) _buildProfileTabMobile(context, isDark),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _buildMobileTopPill(BuildContext context, bool isDark) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
@@ -1117,6 +1122,7 @@ class _HomeScreenState extends State<HomeScreen> {
       bullets: const ["Capture", "Rebuild", "STL/GLB"],
       isDark: isDark,
     );
+    
   }
 
   Widget _buildMarketTabMobile(BuildContext context, bool isDark) {
@@ -2417,6 +2423,7 @@ class _GlassBottomNavBar extends StatelessWidget {
     _BottomItem(icon: Icons.bolt_rounded, semantics: "AI Studio"),
     _BottomItem(icon: Icons.photo_camera_rounded, semantics: "Scan"),
     _BottomItem(icon: Icons.storefront_rounded, semantics: "Market"),
+    _BottomItem(icon: Icons.work_rounded, semantics: "Freelance"),
     _BottomItem(icon: Icons.person_rounded, semantics: "Profile"),
   ];
 
@@ -2433,9 +2440,15 @@ class _GlassBottomNavBar extends StatelessWidget {
             child: Container(
               height: 72,
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.85),
+                color: isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.white.withOpacity(0.85),
                 borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.white),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.12)
+                      : Colors.white,
+                ),
                 boxShadow: [
                   BoxShadow(
                     blurRadius: 30,
@@ -2481,14 +2494,19 @@ class _GlassBottomNavBar extends StatelessWidget {
                       Row(
                         children: List.generate(_items.length, (i) {
                           final active = i == currentIndex;
+
                           return Expanded(
                             child: Semantics(
                               label: _items[i].semantics,
                               button: true,
                               child: InkWell(
                                 onTap: () => onTap(i),
-                                splashColor: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04),
-                                highlightColor: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.02),
+                                splashColor: isDark
+                                    ? Colors.white.withOpacity(0.06)
+                                    : Colors.black.withOpacity(0.04),
+                                highlightColor: isDark
+                                    ? Colors.white.withOpacity(0.04)
+                                    : Colors.black.withOpacity(0.02),
                                 child: Center(
                                   child: AnimatedScale(
                                     duration: const Duration(milliseconds: 180),
@@ -2497,7 +2515,11 @@ class _GlassBottomNavBar extends StatelessWidget {
                                     child: Icon(
                                       _items[i].icon,
                                       size: 22,
-                                      color: active ? Colors.white : (isDark ? Colors.white.withOpacity(0.70) : Colors.black54),
+                                      color: active
+                                          ? Colors.white
+                                          : (isDark
+                                              ? Colors.white.withOpacity(0.70)
+                                              : Colors.black54),
                                     ),
                                   ),
                                 ),
@@ -2517,7 +2539,6 @@ class _GlassBottomNavBar extends StatelessWidget {
     );
   }
 }
-
 class _BottomItem {
   final IconData icon;
   final String semantics;

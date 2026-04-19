@@ -79,7 +79,6 @@ class _CreatorWalletDashboardState extends State<CreatorWalletDashboard> with Si
   }
 
   void _showSnackbar(String text, bool isDark) {
-    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -100,7 +99,7 @@ class _CreatorWalletDashboardState extends State<CreatorWalletDashboard> with Si
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final bool isWeb = MediaQuery.sizeOf(context).width >= 900;
+    final bool isWeb = MediaQuery.of(context).size.width >= 900;
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(isWeb ? 40 : 16),

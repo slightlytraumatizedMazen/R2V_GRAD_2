@@ -73,7 +73,6 @@ class _CreatorAnalyticsDashboardState extends State<CreatorAnalyticsDashboard> w
   }
 
   void _showClientDirectorySnackbar(bool isDark) {
-    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("Routing to Full Client Directory...", style: TextStyle(fontFamily: 'Inter', color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600)),
@@ -87,9 +86,7 @@ class _CreatorAnalyticsDashboardState extends State<CreatorAnalyticsDashboard> w
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final double screenWidth = MediaQuery.sizeOf(context).width;
-    final bool isWeb = screenWidth >= 900;
-    final double mobileMetricWidth = screenWidth < 420 ? screenWidth - 32 : (screenWidth - 48) / 2;
+    final bool isWeb = MediaQuery.of(context).size.width >= 900;
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(isWeb ? 40 : 16),
@@ -129,10 +126,10 @@ class _CreatorAnalyticsDashboardState extends State<CreatorAnalyticsDashboard> w
                   : Wrap(
                       spacing: 16, runSpacing: 16,
                       children: [
-                        SizedBox(width: mobileMetricWidth, child: _buildMetricCard(icon: Icons.payments_rounded, iconColor: const Color(0xFFBC70FF), title: "EARNINGS", value: "\$4,850", trend: "+12.5%", isPositive: true, isDark: isDark)),
-                        SizedBox(width: mobileMetricWidth, child: _buildMetricCard(icon: Icons.assignment_rounded, iconColor: const Color(0xFF4CC9F0), title: "ORDERS", value: "14", trend: "Steady", isPositive: null, isDark: isDark)),
-                        SizedBox(width: mobileMetricWidth, child: _buildMetricCard(icon: Icons.check_circle_rounded, iconColor: const Color(0xFFBC70FF), title: "COMPLETED", value: "186", trend: "+4", isPositive: true, isDark: isDark)),
-                        SizedBox(width: mobileMetricWidth, child: _buildMetricCard(icon: Icons.visibility_rounded, iconColor: const Color(0xFFBC70FF), title: "VIEWS", value: "12.4K", trend: "-2.1%", isPositive: false, isDark: isDark)),
+                        SizedBox(width: (MediaQuery.of(context).size.width - 48) / 2, child: _buildMetricCard(icon: Icons.payments_rounded, iconColor: const Color(0xFFBC70FF), title: "EARNINGS", value: "\$4,850", trend: "+12.5%", isPositive: true, isDark: isDark)),
+                        SizedBox(width: (MediaQuery.of(context).size.width - 48) / 2, child: _buildMetricCard(icon: Icons.assignment_rounded, iconColor: const Color(0xFF4CC9F0), title: "ORDERS", value: "14", trend: "Steady", isPositive: null, isDark: isDark)),
+                        SizedBox(width: (MediaQuery.of(context).size.width - 48) / 2, child: _buildMetricCard(icon: Icons.check_circle_rounded, iconColor: const Color(0xFFBC70FF), title: "COMPLETED", value: "186", trend: "+4", isPositive: true, isDark: isDark)),
+                        SizedBox(width: (MediaQuery.of(context).size.width - 48) / 2, child: _buildMetricCard(icon: Icons.visibility_rounded, iconColor: const Color(0xFFBC70FF), title: "VIEWS", value: "12.4K", trend: "-2.1%", isPositive: false, isDark: isDark)),
                       ],
                     ),
             ),
@@ -483,11 +480,9 @@ class _CreatorAnalyticsDashboardState extends State<CreatorAnalyticsDashboard> w
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: _DashboardNetworkImage(
-            image,
-            width: 50,
-            height: 40,
-            isDark: isDark,
+          child: Image.network(
+            image, width: 50, height: 40, fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(width: 50, height: 40, color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05), child: Icon(Icons.image_not_supported, color: isDark ? Colors.white54 : Colors.black38, size: 16)),
           ),
         ),
         const SizedBox(width: 14),
@@ -516,62 +511,12 @@ class _CreatorAnalyticsDashboardState extends State<CreatorAnalyticsDashboard> w
     );
   }
 
-
   BoxDecoration _glassDecoration(bool isDark) {
     return BoxDecoration(
       color: isDark ? Colors.black.withOpacity(0.25) : Colors.white.withOpacity(0.85),
       borderRadius: BorderRadius.circular(24),
       border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.white),
       boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))],
-    );
-  }
-}
-
-class _DashboardNetworkImage extends StatelessWidget {
-  final String imageUrl;
-  final double width;
-  final double height;
-  final bool isDark;
-
-  const _DashboardNetworkImage(
-    this.imageUrl, {
-    required this.width,
-    required this.height,
-    required this.isDark,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Image.network(
-      imageUrl,
-      width: width,
-      height: height,
-      fit: BoxFit.cover,
-      filterQuality: FilterQuality.medium,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return Container(
-          width: width,
-          height: height,
-          color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.04),
-          alignment: Alignment.center,
-          child: const SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        );
-      },
-      errorBuilder: (_, __, ___) => Container(
-        width: width,
-        height: height,
-        color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
-        child: Icon(
-          Icons.image_not_supported,
-          color: isDark ? Colors.white54 : Colors.black38,
-          size: 16,
-        ),
-      ),
     );
   }
 }
